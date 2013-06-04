@@ -5,9 +5,10 @@ def func_Concurrent(G,initFlag):
     ### Need calculate SB ratio
     totalVM = 0
     readyVM = 0
-    bool__dict = []        # vm_num and status, status -1 == completed, status 0 == still running, status 1 == ok
+    bool__dict = dict()        # vm_num and status, status -1 == completed, status 0 == still running, status 1 == ok
     ### need modification
-    bwStep = linkBW*0.001
+    # bwStep = linkBW*0.001
+    bwStep = 100*0.001
     ###
 
 
@@ -17,7 +18,7 @@ def func_Concurrent(G,initFlag):
 
     for vm_num,vm_obj in G.all_VM__dict.items():        
         bool__dict[vm_num] = -1        
-        if vm_obj.status == waiting or vm_obj.status == sending:
+        if vm_obj.status == 'waiting' or vm_obj.status == 'sending':
             SRCobj = G.all_host__dict[vm_obj.SRCnum]
             DSTobj = G.all_host__dict[vm_obj.DSTnum]
             
@@ -25,7 +26,7 @@ def func_Concurrent(G,initFlag):
             DSTobj.dnRBW_tmp = DSTobj.dnRBW
          
             if initFlag == True:
-                if vm_obj.migration_mode == 'StopNCopy':
+                if G.migration_mode == 'StopNCopy':
                     SRCobj.upRBW_tmp += vm_obj.upSBW    # StopNCopy mode!!!
             else :
                 SRCobj.upRBW_tmp += vm_obj.latest_data_rate
@@ -41,7 +42,7 @@ def func_Concurrent(G,initFlag):
                 vm_obj = G.all_VM__dict[vm_num]
                 SRCobj = G.all_host__dict[vm_obj.SRCnum]
                 DSTobj = G.all_host__dict[vm_obj.DSTnum]
-                if SRCobj.upRBW_tmp >= bwStep & DSTobj.dnRBW_tmp >= bwStep:
+                if SRCobj.upRBW_tmp >= bwStep and DSTobj.dnRBW_tmp >= bwStep:
                     vm_obj.tmp_rate += bwStep
                     SRCobj.upRBW_tmp -= bwStep
                     DSTobj.dnRBW_tmp -= bwStep
@@ -49,7 +50,7 @@ def func_Concurrent(G,initFlag):
                     vm_obj.tmp_rate += min(SRCobj.upRBW_tmp,DSTobj.dnRBW_tmp)
                     SRCobj.upRBW_tmp -= min(SRCobj.upRBW_tmp,DSTobj.dnRBW_tmp)
                     DSTobj.dnRBW_tmp -= min(SRCobj.upRBW_tmp,DSTobj.dnRBW_tmp)
-                    bool__List[vm_num] = 1
+                    bool__dict[vm_num] = 1
                     readyVM +=1
                     
     for vm_num,status in bool__dict.items():

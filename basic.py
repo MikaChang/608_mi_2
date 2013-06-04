@@ -3,6 +3,7 @@ from init_parameter import SET__set, GP__set, SLOTTIME, ACCEPTABLE_MINI_VMM_DATA
 from init_parameter import *
 from init_update_func import *
 from function import *
+from concurrent_case import *
 import math
 
 
@@ -10,27 +11,22 @@ class Global_cl():
     def __init__(self, input_dict):    
         self.E =  Event_list_cl(self)  # declare event_list, we store event_obj inside
         
-        # self.input_dict =dict()
-        ### smart input        
-        # self.input_dict =input_dict
+        self.input_dict =dict()
+        self.input_dict =input_dict
+        # ### smart input        
         
-        # self.migration_mode = 'StopNCopy'      # 'PreCopy' or 'StopNCopy'        
-        self.migration_mode = input_dict['migration_mode']      # 'PreCopy' or 'StopNCopy'
+        # # self.migration_mode = 'StopNCopy'      # 'PreCopy' or 'StopNCopy'        
+        # self.migration_mode = input_dict['migration_mode']      # 'PreCopy' or 'StopNCopy'
         
-        # self.algo_version = 'StrictSequence'
-        self.algo_version = input_dict['algo_version']
-
+        # # self.algo_version = 'StrictSequence'
+        # self.algo_version = input_dict['algo_version']
         
-        # self.VMmigr_gen_type = 'vmFirst'         #'vmFirst' or 'srcFirst'.
-        self.VMmigr_gen_type = input_dict['VMmigr_gen_type']         #'vmFirst' or 'srcFirst'.        
-        #**** VM_first: largest VM search DST first.     
-        #**** SRC_first:  smallest SRC --> largest VM search DST first
-        
-
-        
-        
-
-        ### smart input        
+        # # self.VMmigr_gen_type = 'vmFirst'         #'vmFirst' or 'srcFirst'.
+        # self.VMmigr_gen_type = input_dict['VMmigr_gen_type']         #'vmFirst' or 'srcFirst'.        
+        # #**** vmFirst: largest VM search DST first.     
+        # #**** srcFirst:  smallest SRC --> largest VM search DST first
+        self.record_input_dict(input_dict)
+        # ### smart input        
         
         
         self.now = 0            # record  'NOW' time    
@@ -56,7 +52,26 @@ class Global_cl():
         self.GPNum_to_host__dict = dict()  # key: group number   value: host_num set
         for i in GP__set:
             self.GPNum_to_host__dict[i] = set()
+            
+    def record_input_dict(self, input_dict):
+        self.migration_mode = input_dict['migration_mode']      # 'PreCopy' or 'StopNCopy'
+        self.algo_version = input_dict['algo_version']
+        self.VMmigr_gen_type = input_dict['VMmigr_gen_type']         #'vmFirst' or 'srcFirst'.        
 
+        
+    def refresh_G(self, input_dict, all_host__dict, all_VM__dict):
+        self.record_input_dict(input_dict)
+        self.input_dict =input_dict
+    
+        self.all_host__dict = all_host__dict    # store all the host_obj   e.g.  all_host__dict[host_num] = host_obj
+        self.all_VM__dict = all_VM__dict
+        for key, obj in all_host__dict.items():
+            obj.G = self
+        for key, obj in all_VM__dict.items():
+            obj.G = self
+            
+            
+            
 
 
 class Event_list_cl():
@@ -76,7 +91,7 @@ class Event_list_cl():
         if event_obj.time != self.G.all_VM__dict[event_obj.vm_num].last_migration_event_finish_time:
             # print 'now time:', self.G.now, 'Event_list_cl.upcoming_event --> skip event'
             print 'Event_list_cl.upcoming_event() --> skip event'
-            return False, None
+            return False, event_obj
         
         print 'Event_list_cl.upcoming_event()', 'event_num', event_obj.event_num
         return True, event_obj
@@ -246,8 +261,8 @@ class VM_cl2():
         self.remain_size -= float(last_round_migration_period) * self.latest_data_rate
     
         assert(self.status == 'sending')
-        SRCobj = G.all_host__dict[self.SRCnum]
-        DSTobj = G.all_host__dict[self.DSTnum]
+        SRCobj = self.G.all_host__dict[self.SRCnum]
+        DSTobj = self.G.all_host__dict[self.DSTnum]
         
         #release old data rate for SRC and DST
         assert(SRCobj.upRBW >= 0), SRCobj.upRBW
@@ -268,7 +283,7 @@ class VM_cl2():
         event_obj = Event_cl(self.G, tmp_type, finish_time, self.vm_num, tmp_info__dict)
         
         assert (self.migration_start_time != 0)        
-        self.G.E.list.insert(event_obj)
+        self.G.E.insert_event_obj(event_obj)
         
 
     def release_BW(self):   # release the BW usage.   SRC release uplink, DST release dnlink
@@ -314,8 +329,8 @@ class VM_cl2():
             func_SS(self.G, 1, 'random')
             func_SS(self.G, 2, 'random')
             
-        elif G.algo_version == 'ConCurrent':
-            ConCur_py.func_Concurrent(self.G, initFlag = False)
+        elif self.G.algo_version == 'ConCurrent':
+            func_Concurrent(self.G, initFlag = False)
         
         
     def assign_VM_BW(self, rate):       
@@ -442,9 +457,11 @@ class VM_cl2():
                 assert(domi_node == None)
             elif BW_mode == 'full':
                 if domi_node =='DST':
-                    assert (minRate == dnRate)
+                    None
+                    # assert (minRate == dnRate)
                 elif domi_node =='SRC':
-                    assert (minRate == upRate)
+                    None
+                    # assert (minRate == upRate)
                 else:
                     assert(0)
             else:

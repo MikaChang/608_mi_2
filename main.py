@@ -50,8 +50,8 @@ print 'input_dict', input_dict
 G = Global_cl(input_dict)     #global data structure
 
 # generate VM and hosts, if at least one VM have not DST --> re-run snapshot_gen_func again
-keep_gen_snapshot = True
-# keep_gen_snapshot = False
+# keep_gen_snapshot = True
+keep_gen_snapshot = False
 
 result = False
 while keep_gen_snapshot:
@@ -64,10 +64,9 @@ while keep_gen_snapshot:
         G.all_VM__dict = vm__dict
         G.all_host__dict = host__dict
         
-        print 'before pickle G=\n'
-        
+        print 'before pickle G=\n'        
         pickle.dump( G, open( tmp_snapshot_file, "wb" ) ) 
-        # pickle.dump( (vm__dict, host__dict), open( tmp_snapshot_file, "wb" ) ) 
+
         keep_gen_snapshot = False
         break
     elif result == False:
@@ -79,19 +78,8 @@ assert(result == True or keep_gen_snapshot == False)
 
 
 # # use pickle to store and load G obj
-# if keep_gen_snapshot == True:
-    # pickle.dump( G, open( tmp_snapshot_file, "wb" ) ) 
-# else:
-    # G = pickle.load( open( tmp_snapshot_file, "rb" ) )    
-    
-    
-G = pickle.load( open( tmp_snapshot_file, "rb" ) )
-
-# G.all_VM__dict, G.all_host__dict = pickle.load( open( tmp_snapshot_file, "rb" ) )
-# for i in [G.all_VM__dict, G.all_host__dict]
-# for key, value in 
-
-
+G_tmp = pickle.load( open( tmp_snapshot_file, "rb" ) )
+G.refresh_G(input_dict, G_tmp.all_host__dict, G_tmp.all_VM__dict)
 print 'after pickle G=\n', G
 print '\n\n'
 
