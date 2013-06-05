@@ -32,11 +32,12 @@ def result_one_snap(G):
     assert(max >=0)
     output_dict['sys_migration_period'] = max_t - min_t
     output_dict['accu_vm_migration_period'] = sum(tmp_migration_period__list)
+    output_dict['accu_vm_deployment_time'] = sum(tmp_over__list)
     # output_dict['vm_migration_period__list'] = tmp_migration_period__list
     print '\n\nFinal result==='
-    print 'each vm migration period time', tmp_migration_period__list
-    print 'each vm migration start time', tmp_start__list
-    print 'each vm migration over time', tmp_over__list
+    # print 'each vm migration period time', tmp_migration_period__list
+    # print 'each vm migration start time', tmp_start__list
+    # print 'each vm migration over time', tmp_over__list
     print 'output_dict', output_dict
     return output_dict
     

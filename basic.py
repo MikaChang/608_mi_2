@@ -53,10 +53,20 @@ class Global_cl():
         for i in GP__set:
             self.GPNum_to_host__dict[i] = set()
             
+    # # # update the decision making varible in G
     def record_input_dict(self, input_dict):
+        self.VMmigr_gen_type = input_dict['VMmigr_gen_type']         #'vmFirst' or 'srcFirst'.        
+
+        # # # algo related varible should update, if given from input_dict 
+        # print 'record_input_dict() input_dict', input_dict
+        for i in ["migration_mode", 'algo_version']:
+            if i not in input_dict.keys():
+                print 'record_input_dict() skip'
+                return
         self.migration_mode = input_dict['migration_mode']      # 'PreCopy' or 'StopNCopy'
         self.algo_version = input_dict['algo_version']
-        self.VMmigr_gen_type = input_dict['VMmigr_gen_type']         #'vmFirst' or 'srcFirst'.        
+        
+
 
         
     def refresh_G(self, input_dict, all_host__dict, all_VM__dict):
@@ -114,6 +124,7 @@ class Host_cl():
         
         
         ### Louis used in snapshot_gen.py. Only meaningful in snapshot_gen()
+        ### tmp varible --> never use this kind of varible for decision making, only if you maintain varible value by yourself.        
         self.size = 100.0
         self.BWC = 100.0
         self.upBW = 0.0
@@ -138,7 +149,7 @@ class Host_cl():
         self.Final_upRBW = 0.0   # Final residual up BW after all VMM complete
         self.Final_dnRBW = 0.0   # Final residual down BW after all VMM complete
         
-        ### tmp varible --> never use this kind of varible for decision making, only if you set varible value by yourself.
+        ### tmp varible --> never use this kind of varible for decision making, only if you maintain varible value by yourself.
         self.upRBW_tmp = 0.0   # now residual up BW
         self.dnRBW_tmp = 0.0   # now residual down BW        
         
@@ -181,13 +192,15 @@ class VM_cl2():
     def __init__(self, G, ori_size, vm_num, upSBW, dnSBW, sigma, SRCnum):
         self.G = G
         self.ori_size = float(ori_size) # original size of VM
+        
         ### Louis
         self.sigma = float(sigma) 
         ### Louis
+        
         self.remain_size = float(ori_size)  # after some time period, the remaining size for migration
         self.upSBW = float(upSBW)  #vm uplink service BW
         self.dnSBW = float(dnSBW)  #vm downlink service BW
-        
+
         self.upBSratio = float(upSBW) / ori_size
         self.upSBratio = ori_size / float(upSBW)
         self.dnBSratio = float(dnSBW) / ori_size
@@ -284,6 +297,9 @@ class VM_cl2():
         
         assert (self.migration_start_time != 0)        
         self.G.E.insert_event_obj(event_obj)
+
+        # # # make sure src and dst RBW are reasonable
+        self.assert_host_RBW()
         
 
     def release_BW(self):   # release the BW usage.   SRC release uplink, DST release dnlink
@@ -292,15 +308,22 @@ class VM_cl2():
         
         SRCobj = self.G.all_host__dict[self.SRCnum]
         DSTobj = self.G.all_host__dict[self.DSTnum]
+        
+        # # #  release the BW used by migration process
         SRCobj.upRBW += self.latest_data_rate
         DSTobj.dnRBW += self.latest_data_rate
+        
+        # # # VM activation:  vm service BW will decrease DST upRBW and dnRBW
         DSTobj.upRBW -= self.upSBW
         DSTobj.dnRBW -= self.dnSBW
+        
+        # # # release the BW used by vm service at src
         if self.G.migration_mode == 'PreCopy':
             SRCobj.upRBW += self.upSBW    # PreCopy mode!!!
             SRCobj.dnRBW += self.dnSBW    # PreCopy mode!!!
         else:
             assert (self.G.migration_mode == 'StopNCopy')
+            
         assert(SRCobj.upRBW >= 0), SRCobj.upRBW
         assert(DSTobj.dnRBW >= 0), DSTobj.dnRBW
         
@@ -311,7 +334,9 @@ class VM_cl2():
         self.next_status()
 
         self.migration_over_time = self.G.now
-
+        
+        # # # make sure src and dst RBW are reasonable
+        self.assert_host_RBW()
 
     
     def migration_over(self):
@@ -323,6 +348,7 @@ class VM_cl2():
             print 'basic.py  vm_obj.migration_over() vm_num=', self.vm_num
         
         self.release_BW()
+        
         if self.G.algo_version == 'StrictSequence':
             func_SS_update_ongoing(self.G,self.vm_num)
             ### can change to multiple SS G functions
@@ -345,11 +371,14 @@ class VM_cl2():
             SRCobj.dnRBW += self.dnSBW    # StopNCopy mode!!!
         else:
             assert (self.G.migration_mode == 'PreCopy')
+            
+        # # #vm activation, update the RBW at src and dst
         SRCobj.upRBW -= rate
         DSTobj.dnRBW -= rate
         assert(SRCobj.upRBW >= 0), SRCobj.upRBW
         assert(DSTobj.dnRBW >= 0), DSTobj.dnRBW        
         
+        # # # update the vm related status store in SRCobj and DSTobj
         self.next_status()
         self.latest_data_rate = rate
         SRCobj.waiting_vm__set -= set([self.vm_num])
@@ -365,12 +394,15 @@ class VM_cl2():
         
         self.G.E.insert_event_obj(event_obj)
 
-        # # # declear the willing to wait on other side host 
+        # # # delete the willing to wait on other side host 
         SRCobj.reg_q__Set.discard(self.vm_num)
         DSTobj.reg_q__Set.discard(self.vm_num)
         for i in GP__set:
-            SRCobj.GPNum_to_VM__dict[i].discard(self)   ### key: group number   value: VM_obj set
-            DSTobj.GPNum_to_VM__dict[i].discard(self)   ### key: group number   value: VM_obj set
+            SRCobj.GPNum_to_VM__dict[i].discard(self)   # key: group number   value: VM_obj set
+            DSTobj.GPNum_to_VM__dict[i].discard(self)   # key: group number   value: VM_obj set
+            
+        # # # make sure src and dst RBW are reasonable
+        self.assert_host_RBW()
         
         
     def compute_finish_time(self):
@@ -445,9 +477,17 @@ class VM_cl2():
         elif self.G.migration_mode == 'StopNCopy' and self.status == 'waiting':
             upRate += self.upSBW   # StopNCopy mode!!!                   
 
-        minRate = min(upRate, dnRate)        
+        minRate = min(upRate, dnRate)
+        if minRate == upRate:
+            print 'basic.py:  vm_obj.speed_checking() minRate from SRC.upRate'
+        elif minRate == dnRate:
+            print 'basic.py:  vm_obj.speed_checking() minRate from DST.dnRate'            
+        Rate_tmp = minRate / float(RATE_PRECISION)        
+        Rate_tmp = int(Rate_tmp) * RATE_PRECISION
+        minRate = Rate_tmp
+
         if minRate == 0 or minRate <= ACCEPTABLE_MINI_VMM_DATA_RATE:
-            minRate = 0
+            minRate = 0.0
             mode_result = 'fail'
             # print 'basic.py:  vm_obj.speed_checking()  return fail    miniRate=', 0
             # return 'fail', 0
@@ -471,6 +511,25 @@ class VM_cl2():
         return mode_result, minRate    
         ###
 
+        
+    # # # check for the src and dst RBW. Make sure both RBW ==>   0<RBW<host_obj.BWC
+    def assert_host_RBW(self):
+        SRCobj = self.G.all_host__dict[self.SRCnum]
+        DSTobj = self.G.all_host__dict[self.DSTnum]
+        
+        assert(SRCobj.upRBW >= 0 and SRCobj.upRBW <= SRCobj.BWC + RATE_PRECISION), '%.20f, %.20f' % (SRCobj.upRBW, SRCobj.BWC)
+        assert(DSTobj.upRBW >= 0 and DSTobj.upRBW <= DSTobj.BWC + RATE_PRECISION), '%.20f, %.20f' % (DSTobj.upRBW, DSTobj.BWC)
+
+        assert(SRCobj.dnRBW >= 0 and SRCobj.dnRBW <= SRCobj.BWC+ RATE_PRECISION), '%.20f, %.20f' % (SRCobj.dnRBW, SRCobj.BWC)
+        assert(DSTobj.dnRBW >= 0 and DSTobj.dnRBW <= DSTobj.BWC+ RATE_PRECISION), '%.20f, %.20f' % (DSTobj.dnRBW, DSTobj.BWC)
+       
+
+        
+        
+        
+        
+        
+        
 class Event_cl():
     def __init__(self, G, type, time, vm_num, info__dict = dict()):
         self.G = G

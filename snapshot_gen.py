@@ -61,10 +61,15 @@ def migr_gen_C(type, vm_num_count, src_num, all_host__dict, all_VM__dict, src__d
 def migr_gen_LB():
     None
 
-def snapshot_gen(G, tot_host_num, src_num, migr_type):
+def snapshot_gen(G, input_dict):
     ### tot_host_num can be 16 or 64
     ### src_num can be [4, 8, 12] in 16_mode
     ### migr_type can be 'Consolidation' or 'LoadBalancing'
+    
+    tot_host_num = input_dict['tot_host_num']
+    src_num = input_dict['src_num']
+    migr_type = input_dict['migr_type']
+    
     
     all_host__dict = dict()
     all_VM__dict = dict()
@@ -81,19 +86,50 @@ def snapshot_gen(G, tot_host_num, src_num, migr_type):
     
     ### parameters about host source limit
     if migr_type == 'Consolidation':
-        src_upBWC_range = (25, 30) # the unit is percentage
-        src_dnBWC_range = (25, 30)
-        src_sigmaC_range = (25, 30)
-        dst_upBWC_range = (70, 75)
-        dst_dnBWC_range = (70, 75)
-        dst_sigmaC_range = (70, 75)
+        # src_upBWC_range = (25, 30) # the unit is percentage
+        # src_dnBWC_range = (25, 30)
+        # src_sigmaC_range = (25, 30)
+        # dst_upBWC_range = (70, 75)
+        # dst_dnBWC_range = (70, 75)
+        # dst_sigmaC_range = (70, 75)
+        
+        # src_upBWC_range = input_dict [" src_upBWC_range "] = (25, 30)
+        # src_dnBWC_range = input_dict [" src_dnBWC_range "] = (25, 30)
+        # src_sigmaC_range = input_dict [" src_sigmaC_range "] = (25, 30)
+        # dst_upBWC_range = input_dict [" dst_upBWC_range "] = (70, 75)
+        # dst_dnBWC_range = input_dict [" dst_dnBWC_range "] = (70, 75)
+        # dst_sigmaC_range = input_dict [" dst_sigmaC_range "] = (70, 75)
+        
+        src_upBWC_range = input_dict [" src_upBWC_range "]
+        src_dnBWC_range = input_dict [" src_dnBWC_range "]
+        src_sigmaC_range = input_dict [" src_sigmaC_range "]
+        dst_upBWC_range = input_dict [" dst_upBWC_range "]
+        dst_dnBWC_range = input_dict [" dst_dnBWC_range "]
+        dst_sigmaC_range = input_dict [" dst_sigmaC_range "]
+
+
     elif migr_type == 'LoadBalancing':
-        src_upBWC_range = (75, 95)
-        src_dnBWC_range = (75, 95)
-        src_sigmaC_range = (75, 95)
-        dst_upBWC_range = (30, 50)
-        dst_dnBWC_range = (30, 50)
-        dst_sigmaC_range = (30, 50)
+        # src_upBWC_range = (75, 95)
+        # src_dnBWC_range = (75, 95)
+        # src_sigmaC_range = (75, 95)
+        # dst_upBWC_range = (30, 50)
+        # dst_dnBWC_range = (30, 50)
+        # dst_sigmaC_range = (30, 50)
+        
+        # src_upBWC_range = input_dict [" src_upBWC_range "] = (75, 95)
+        # src_dnBWC_range = input_dict [" src_dnBWC_range "] = (75, 95)
+        # src_sigmaC_range = input_dict [" src_sigmaC_range "] = (75, 95)
+        # dst_upBWC_range = input_dict [" dst_upBWC_range "] = (30, 50)
+        # dst_dnBWC_range = input_dict [" dst_dnBWC_range "] = (30, 50)
+        # dst_sigmaC_range = input_dict [" dst_sigmaC_range "] = (30, 50)
+        
+        src_upBWC_range = input_dict [" src_upBWC_range "]
+        src_dnBWC_range = input_dict [" src_dnBWC_range "]
+        src_sigmaC_range = input_dict [" src_sigmaC_range "]
+        dst_upBWC_range = input_dict [" dst_upBWC_range "]
+        dst_dnBWC_range = input_dict [" dst_dnBWC_range "]
+        dst_sigmaC_range = input_dict [" dst_sigmaC_range "]
+
     else:
         assert(0)
         
@@ -105,15 +141,15 @@ def snapshot_gen(G, tot_host_num, src_num, migr_type):
             src__dict[i] = list()
             host_obj = Host_cl(G, 'SRC', i)
             
-            src_upBWC = random.uniform(src_upBWC_range[0], src_upBWC_range[1])
-            src_dnBWC = random.uniform(src_dnBWC_range[0], src_dnBWC_range[1])
-            src_sigmaC = random.uniform(src_sigmaC_range[0], src_sigmaC_range[1])
+            src_upBWC = random.randint(src_upBWC_range[0], src_upBWC_range[1])
+            src_dnBWC = random.randint(src_dnBWC_range[0], src_dnBWC_range[1])
+            src_sigmaC = random.randint(src_sigmaC_range[0], src_sigmaC_range[1])
             
             while 1:
-                vm_upSBW = random.uniform(vm_upSBW_range[0], vm_upSBW_range[1])
-                vm_dnSBW = random.uniform(vm_dnSBW_range[0], vm_dnSBW_range[1])
-                vm_sigma = random.uniform(vm_sigma_range[0], vm_sigma_range[1])
-                vm_ori_size = random.uniform(vm_ori_size_range[0], vm_ori_size_range[1])
+                vm_upSBW = random.randint(vm_upSBW_range[0], vm_upSBW_range[1])
+                vm_dnSBW = random.randint(vm_dnSBW_range[0], vm_dnSBW_range[1])
+                vm_sigma = random.randint(vm_sigma_range[0], vm_sigma_range[1])
+                vm_ori_size = random.randint(vm_ori_size_range[0], vm_ori_size_range[1])
                 
                 if (host_obj.upBW + vm_upSBW <= src_upBWC) &\
                 (host_obj.dnBW + vm_dnSBW <= src_dnBWC) &\
@@ -135,15 +171,15 @@ def snapshot_gen(G, tot_host_num, src_num, migr_type):
             # print 'snapshot_gen.py SRC generate'
             host_obj = Host_cl(G, 'DST', i)
             
-            dst_upBWC = random.uniform(dst_upBWC_range[0], dst_upBWC_range[1])
-            dst_dnBWC = random.uniform(dst_dnBWC_range[0], dst_dnBWC_range[1])
-            dst_sigmaC = random.uniform(dst_sigmaC_range[0], dst_sigmaC_range[1])
+            dst_upBWC = random.randint(dst_upBWC_range[0], dst_upBWC_range[1])
+            dst_dnBWC = random.randint(dst_dnBWC_range[0], dst_dnBWC_range[1])
+            dst_sigmaC = random.randint(dst_sigmaC_range[0], dst_sigmaC_range[1])
             
             while 1:
-                vm_upSBW = random.uniform(vm_upSBW_range[0], vm_upSBW_range[1])
-                vm_dnSBW = random.uniform(vm_dnSBW_range[0], vm_dnSBW_range[1])
-                vm_sigma = random.uniform(vm_sigma_range[0], vm_sigma_range[1])
-                vm_ori_size = random.uniform(vm_ori_size_range[0], vm_ori_size_range[1])
+                vm_upSBW = random.randint(vm_upSBW_range[0], vm_upSBW_range[1])
+                vm_dnSBW = random.randint(vm_dnSBW_range[0], vm_dnSBW_range[1])
+                vm_sigma = random.randint(vm_sigma_range[0], vm_sigma_range[1])
+                vm_ori_size = random.randint(vm_ori_size_range[0], vm_ori_size_range[1])
                 
                 if (host_obj.upBW + vm_upSBW <= dst_upBWC) &\
                 (host_obj.dnBW + vm_dnSBW <= dst_dnBWC) &\

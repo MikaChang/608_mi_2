@@ -2,6 +2,9 @@
 from __future__ import division
 import math
 
+# from decimal import *
+# getcontext().prec = 6
+
 
 # # for StrictSequence algo
 # # import init_update_func as init_func
@@ -27,6 +30,13 @@ tmp_snapshot_file = 'tmp_snapshot_file.tmp'
 
 SET__set = set([1,2,3])  # set 1,2,3
 GP__set = set([1,2,3])   # group 1,2,3
+
+# # # time precision
 SLOTTIME = 1e-6
 
-ACCEPTABLE_MINI_VMM_DATA_RATE = 0.1
+# # # rate precision
+RATE_PRECISION = 1e-6
+
+# # #
+# ACCEPTABLE_MINI_VMM_DATA_RATE = 0.1
+ACCEPTABLE_MINI_VMM_DATA_RATE = RATE_PRECISION
