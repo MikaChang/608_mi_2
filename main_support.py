@@ -5,6 +5,7 @@ from snapshot_gen import *
 from init_update_func import *
 from concurrent_case import *
 from result_one_snapshot import *
+from randomCase import *
 import pickle, json
 # import cPickle as pickle
 import pickle
@@ -62,6 +63,8 @@ def main_G_run(input_dict, tmp_snapshot_file):
         func_SS_INIT(G)
     elif input_dict['algo_version'] == 'ConCurrent':
         func_Concurrent(G, initFlag = True)
+    elif input_dict['algo_version'] == 'RanSequence':
+        func_ran_disjoint_init(G)
     else:
         assert(0)
 
@@ -82,7 +85,8 @@ def main_G_run(input_dict, tmp_snapshot_file):
             G.all_VM__dict[vm_num].migration_over()
 
         else:
-            print '---------->> main.py --> skip one obsolete event, event_num', event_obj.event_num
+            # print '---------->> main.py --> skip one obsolete event, event_num', event_obj.event_num
+            None
 
     ### add assert to ensure all vm_obj.status == 'completed'
     print 'all events have finished, computing results for the snapshot'

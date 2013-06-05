@@ -4,6 +4,7 @@ from init_parameter import *
 from init_update_func import *
 from function import *
 from concurrent_case import *
+from randomCase import *
 import math
 
 
@@ -53,6 +54,12 @@ class Global_cl():
         for i in GP__set:
             self.GPNum_to_host__dict[i] = set()
             
+        # ### Yen. for ran-scheduling algo. randomCase.py
+        # ### tmp varible --> never use this kind of varible for decision making, only if you maintain varible value by yourself.        
+        self.disjoint_VM__set = set()
+        self.non_disjoint_VM__set = set()
+        self.waiting_VM__set = set()            
+            
     # # # update the decision making varible in G
     def record_input_dict(self, input_dict):
         self.VMmigr_gen_type = input_dict['VMmigr_gen_type']         #'vmFirst' or 'srcFirst'.        
@@ -100,7 +107,8 @@ class Event_list_cl():
         self.list = tmpL
         if event_obj.time != self.G.all_VM__dict[event_obj.vm_num].last_migration_event_finish_time:
             # print 'now time:', self.G.now, 'Event_list_cl.upcoming_event --> skip event'
-            print 'Event_list_cl.upcoming_event() --> skip event'
+            # print 'Event_list_cl.upcoming_event() --> skip event'
+            None
             return False, event_obj
         
         print 'Event_list_cl.upcoming_event()', 'event_num', event_obj.event_num
@@ -224,10 +232,7 @@ class VM_cl2():
         self.last_migration_event_finish_time = 0  # 1) let event queue check whether the event from event queue is the latest or the expired event. 2) let node update his migration progress upon event. VM can compute the period during two time checkpoint, thus the migration progress can be computed
         self.last_migration_event_schedule_time = 0  #record the event schedule time
         
-        ### Yen. for ran-scheduling algo
-        self.disjoint_VM__set = set()
-        self.non_disjoint_VM__set = set()
-        self.waiting_VM__set = set()
+
         
     def print_out(self):
         print 'vm_obj.print_out(): num', self.vm_num, 'SRC', self.SRCnum, 'DST', self.DSTnum, 'upSBW', self.upSBW, 'dnSBW', self.dnSBW, 'size', self.ori_size, '\nupSBratio', self.upSBratio, 'dnSBratio', self.dnSBratio, '\n'
@@ -313,6 +318,18 @@ class VM_cl2():
         SRCobj.upRBW += self.latest_data_rate
         DSTobj.dnRBW += self.latest_data_rate
         
+        # # #before activation, try to make sure that RBW is enough for activation
+        up_BWshortage = DSTobj.upRBW - self.upSBW
+        dn_BWshortage = DSTobj.dnRBW - self.dnSBW
+        if (up_BWshortage < 0 or dn_BWshortage < 0):
+            None
+            assert(0), 'up_BWshortage: %f  dn_BWshortage: %f ' % (up_BWshortage, dn_BWshortage)
+            upBW = abs(up_BWshortage)
+            dnBW = abs(dn_BWshortage)
+            tmp_list = list(sending_vm__set)
+            
+            
+        
         # # # VM activation:  vm service BW will decrease DST upRBW and dnRBW
         DSTobj.upRBW -= self.upSBW
         DSTobj.dnRBW -= self.dnSBW
@@ -353,10 +370,11 @@ class VM_cl2():
             func_SS_update_ongoing(self.G,self.vm_num)
             ### can change to multiple SS G functions
             func_SS(self.G, 1, 'random')
-            func_SS(self.G, 2, 'random')
-            
+            func_SS(self.G, 2, 'random')            
         elif self.G.algo_version == 'ConCurrent':
             func_Concurrent(self.G, initFlag = False)
+        elif self.G.algo_version == 'RanSequence':
+            func_ran_disjoint_ongoing(self.G, self.vm_num)
         
         
     def assign_VM_BW(self, rate):       
@@ -419,44 +437,7 @@ class VM_cl2():
     # miniRate ==> indicate the min residual BW between SRC and DST    
     def speed_checking(self, BW_mode, domi_node):    # e.g. BW_mode = 'full', 'partial'   domi_node = 'SRC', 'DST'
         # print 'now time:', self.G.now
-        print 'basic.py:  vm_obj.speed_checking()',  'vm_num=', self.vm_num,'BW_mode=',BW_mode, '  domi_node', domi_node    
-        
-        ###
-        # if BW_mode == 'full':
-            # # on-going vm --> just return fail
-            # if self.status != 'waiting':
-                # return 'fail', None
-            
-            # SRCobj = self.G.all_host__dict[self.SRCnum]
-            # DSTobj = self.G.all_host__dict[self.DSTnum]
-            # upRate = SRCobj.upRBW
-            # if self.G.migration_mode == 'StopNCopy':
-                # upRate += self.upSBW   # StopNCopy mode!!!
-            # dnRate = DSTobj.dnRBW
-            # minRate = min(upRate, dnRate)
-            
-            # if minRate == 0 or minRate <= ACCEPTABLE_MINI_VMM_DATA_RATE:
-                # minRate = 0
-                # mode_result = 'fail'
-            
-            # else:
-                # mode_result = 'success'
-                # if domi_node =='DST':
-                    # assert (minRate == dnRate)
-                # elif domi_node =='SRC':
-                    # assert (minRate == upRate)
-                # else:
-                    # assert(0)
-                
-        # # maybe I should implement BW_mode = 'partial'
-        # elif BW_mode == 'partial':
-            # None
-            
-        # else:
-            # assert(0)
-            
-        # print 'basic.py:  vm_obj.speed_checking()  return     result', mode_result, 'minRate', minRate
-        # return mode_result, minRate
+        print 'basic.py:  vm_obj.speed_checking()',  'vm_num=', self.vm_num,'BW_mode=',BW_mode, '  domi_node', domi_node
         
         ###########################
 

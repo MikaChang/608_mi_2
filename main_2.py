@@ -3,6 +3,7 @@ import init_parameter
 from basic import *
 from snapshot_gen import *
 from init_update_func import *
+
 from concurrent_case import *
 from result_one_snapshot import *
 
@@ -66,8 +67,8 @@ migr_type__LIST = [
 # input_dict['tot_host_num'] = 16
 # input_dict['tot_host_num'] = 64
 tot_host_num__LIST = [
-    16,
-    # 64,
+    # 16,
+    64,
 ]
 
 # input_dict['src_num'] = 1
@@ -76,10 +77,10 @@ tot_host_num__LIST = [
 # input_dict['src_num'] = 12
 src_num__LIST = [
     # 1,
-    4,
+    # 4,
     # 8,
     # 10,
-    # 12,
+    12,
 ]
 
 # input_dict['VMmigr_gen_type'] = 'srcFirst'  #'vmFirst' or 'srcFirst'.
