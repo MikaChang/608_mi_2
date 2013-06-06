@@ -38,6 +38,7 @@ def main_gen_snapshot(input_dict, tmp_snapshot_file):
             break
         elif result == False:
             print 'main.py: snapshot_gen False\t', result
+            print 'vm_size:', len(vm__dict), 'host_size', len(host__dict), 'src_num', input_dict['src_num']
         else:
             assert(0)
             

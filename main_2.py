@@ -67,8 +67,11 @@ migr_type__LIST = [
 # input_dict['tot_host_num'] = 16
 # input_dict['tot_host_num'] = 64
 tot_host_num__LIST = [
-    # 16,
-    64,
+    # 4,
+    # 5,
+    # 8,
+    16,
+    # 64,
 ]
 
 # input_dict['src_num'] = 1
@@ -77,10 +80,12 @@ tot_host_num__LIST = [
 # input_dict['src_num'] = 12
 src_num__LIST = [
     # 1,
-    # 4,
+    # 2,
+    4,
     # 8,
     # 10,
-    12,
+    # 12,
+    # 24,
 ]
 
 # input_dict['VMmigr_gen_type'] = 'srcFirst'  #'vmFirst' or 'srcFirst'.
@@ -92,13 +97,18 @@ VMmigr_gen_type__LIST = [
 
 
 for tmpI2 in itertools.product(migr_type__LIST, tot_host_num__LIST, src_num__LIST, VMmigr_gen_type__LIST):
-    
+
     # # #  iterate all types of topology snapshot
     input_dict['migr_type'] = tmpI2[0]
     input_dict['tot_host_num'] = tmpI2[1]
     input_dict['src_num'] = tmpI2[2]
     input_dict['VMmigr_gen_type'] = tmpI2[3]
+    
+    # # # skip some un-reasonable setting
+    if input_dict["src_num"] >= (input_dict["tot_host_num"]/float(2)):
+        continue                    
 
+    # # # for use in snapshot_gen.py
     if input_dict['migr_type'] == 'Consolidation':
         input_dict [" src_upBWC_range "] = (25, 30)
         input_dict [" src_dnBWC_range "] = (25, 30)
@@ -129,7 +139,7 @@ for tmpI2 in itertools.product(migr_type__LIST, tot_host_num__LIST, src_num__LIS
         'StopNCopy'
     ]
     algo_version__LIST = [
-        'StrictSequence', 
+        # 'StrictSequence', 
         'ConCurrent', 
         # 'RanSequence',
     ]

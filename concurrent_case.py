@@ -1,4 +1,5 @@
 import basic
+from init_parameter import SET__set, GP__set, SLOTTIME, ACCEPTABLE_MINI_VMM_DATA_RATE, RATE_PRECISION
 
 def func_Concurrent(G,initFlag):
     ### Need assignment, ex vmm bw, host bw ...
@@ -8,7 +9,8 @@ def func_Concurrent(G,initFlag):
     bool__dict = dict()        # vm_num and status, status -1 == completed, status 0 == still running, status 1 == ok
     ### need modification
     # bwStep = linkBW*0.001
-    bwStep = 100*0.001
+    bwStep = 0.01
+    # bwStep = 1
     ###
 
 
@@ -42,14 +44,15 @@ def func_Concurrent(G,initFlag):
                 vm_obj = G.all_VM__dict[vm_num]
                 SRCobj = G.all_host__dict[vm_obj.SRCnum]
                 DSTobj = G.all_host__dict[vm_obj.DSTnum]
-                if SRCobj.upRBW_tmp >= bwStep and DSTobj.dnRBW_tmp >= bwStep:
+                if SRCobj.upRBW_tmp >= 2 * bwStep and DSTobj.dnRBW_tmp >= 2* bwStep:
                     vm_obj.tmp_rate += bwStep
                     SRCobj.upRBW_tmp -= bwStep
                     DSTobj.dnRBW_tmp -= bwStep
                 else :
-                    vm_obj.tmp_rate += min(SRCobj.upRBW_tmp,DSTobj.dnRBW_tmp)
-                    SRCobj.upRBW_tmp -= min(SRCobj.upRBW_tmp,DSTobj.dnRBW_tmp)
-                    DSTobj.dnRBW_tmp -= min(SRCobj.upRBW_tmp,DSTobj.dnRBW_tmp)
+                    # minRate = min(SRCobj.upRBW_tmp,DSTobj.dnRBW_tmp) - RATE_PRECISION
+                    # vm_obj.tmp_rate += minRate
+                    # SRCobj.upRBW_tmp -= minRate
+                    # DSTobj.dnRBW_tmp -= minRate
                     bool__dict[vm_num] = 1
                     readyVM +=1
                     

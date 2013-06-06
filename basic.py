@@ -1,5 +1,5 @@
 import init_parameter
-from init_parameter import SET__set, GP__set, SLOTTIME, ACCEPTABLE_MINI_VMM_DATA_RATE
+from init_parameter import SET__set, GP__set, SLOTTIME, ACCEPTABLE_MINI_VMM_DATA_RATE, RATE_PRECISION
 from init_parameter import *
 from init_update_func import *
 from function import *
@@ -194,7 +194,8 @@ class Host_cl():
             self.Final_upRBW = self.BWC - self.upBW
             self.Final_dnRBW = self.BWC - self.dnBW
 
-
+    def print_out(self):
+        print 'host_obj.print_out(): num', self.host_num, 'upRBW', self.upRBW, 'dnRBW', self.dnRBW
         
 class VM_cl2():
     def __init__(self, G, ori_size, vm_num, upSBW, dnSBW, sigma, SRCnum):
@@ -235,7 +236,7 @@ class VM_cl2():
 
         
     def print_out(self):
-        print 'vm_obj.print_out(): num', self.vm_num, 'SRC', self.SRCnum, 'DST', self.DSTnum, 'upSBW', self.upSBW, 'dnSBW', self.dnSBW, 'size', self.ori_size, '\nupSBratio', self.upSBratio, 'dnSBratio', self.dnSBratio, '\n'
+        print 'vm_obj.print_out(): num', self.vm_num, 'SRC', self.SRCnum, 'DST', self.DSTnum, 'upSBW', self.upSBW, 'dnSBW', self.dnSBW, 'size', self.ori_size, 'upSBratio', self.upSBratio, 'dnSBratio', self.dnSBratio
         
         
     def next_status(self):
@@ -273,7 +274,7 @@ class VM_cl2():
 
 ### for all parallel algo. --> vm rate may change during migraton proceedings
     def adjust_VM_BW(self, rate):  
-    
+        print 'basic.py:  vm_obj.adjust_VM_BW  rate=',rate, '  vm_num', self.vm_num
         # update  vm_obj.remain_size according latest_data_rate 
         last_round_migration_period = self.G.now - self.last_migration_event_schedule_time
         self.remain_size -= float(last_round_migration_period) * self.latest_data_rate
@@ -323,11 +324,18 @@ class VM_cl2():
         dn_BWshortage = DSTobj.dnRBW - self.dnSBW
         if (up_BWshortage < 0 or dn_BWshortage < 0):
             None
-            assert(0), 'up_BWshortage: %f  dn_BWshortage: %f ' % (up_BWshortage, dn_BWshortage)
-            upBW = abs(up_BWshortage)
-            dnBW = abs(dn_BWshortage)
-            tmp_list = list(sending_vm__set)
+            # assert(0), 'up_BWshortage: %f  dn_BWshortage: %f ' % (up_BWshortage, dn_BWshortage)
+            assert (up_BWshortage >=0), 'up_BWshortage %f' % (up_BWshortage)
+            debet_dnBW = abs(dn_BWshortage)
             
+            vm_num_list = sorted(list(DSTobj.sending_vm__set), key = lambda vm_num: self.G.all_VM__dict[vm_num].latest_data_rate, reverse = True)
+            for i in vm_num_list:
+                vm_obj = self.G.all_VM__dict[i]
+                now_rate = vm_obj.latest_data_rate
+                if now_rate > debet_dnBW:
+                    new_rate = now_rate - debet_dnBW
+                    vm_obj.adjust_VM_BW(new_rate)
+                    
             
         
         # # # VM activation:  vm service BW will decrease DST upRBW and dnRBW
@@ -393,8 +401,8 @@ class VM_cl2():
         # # #vm activation, update the RBW at src and dst
         SRCobj.upRBW -= rate
         DSTobj.dnRBW -= rate
-        assert(SRCobj.upRBW >= 0), SRCobj.upRBW
-        assert(DSTobj.dnRBW >= 0), DSTobj.dnRBW        
+        # assert(SRCobj.upRBW >= 0), SRCobj.upRBW
+        # assert(DSTobj.dnRBW >= 0), DSTobj.dnRBW        
         
         # # # update the vm related status store in SRCobj and DSTobj
         self.next_status()
@@ -460,9 +468,11 @@ class VM_cl2():
 
         minRate = min(upRate, dnRate)
         if minRate == upRate:
-            print 'basic.py:  vm_obj.speed_checking() minRate from SRC.upRate'
+            None
+            # print 'basic.py:  vm_obj.speed_checking() minRate from SRC.upRate'
         elif minRate == dnRate:
-            print 'basic.py:  vm_obj.speed_checking() minRate from DST.dnRate'            
+            None
+            # print 'basic.py:  vm_obj.speed_checking() minRate from DST.dnRate'            
         Rate_tmp = minRate / float(RATE_PRECISION)        
         Rate_tmp = int(Rate_tmp) * RATE_PRECISION
         minRate = Rate_tmp
@@ -503,6 +513,13 @@ class VM_cl2():
 
         assert(SRCobj.dnRBW >= 0 and SRCobj.dnRBW <= SRCobj.BWC+ RATE_PRECISION), '%.20f, %.20f' % (SRCobj.dnRBW, SRCobj.BWC)
         assert(DSTobj.dnRBW >= 0 and DSTobj.dnRBW <= DSTobj.BWC+ RATE_PRECISION), '%.20f, %.20f' % (DSTobj.dnRBW, DSTobj.BWC)
+
+        RATE_PRECISION_2 = 0.5
+        # assert(SRCobj.upRBW >= 0 and SRCobj.upRBW <= SRCobj.BWC + RATE_PRECISION_2), '%.20f, %.20f' % (SRCobj.upRBW, SRCobj.BWC)
+        # assert(DSTobj.upRBW >= 0 and DSTobj.upRBW <= DSTobj.BWC + RATE_PRECISION_2), '%.20f, %.20f' % (DSTobj.upRBW, DSTobj.BWC)
+
+        # assert(SRCobj.dnRBW >= 0 and SRCobj.dnRBW <= SRCobj.BWC+ RATE_PRECISION_2), '%.20f, %.20f' % (SRCobj.dnRBW, SRCobj.BWC)
+        # assert(DSTobj.dnRBW >= 0 and DSTobj.dnRBW <= DSTobj.BWC+ RATE_PRECISION_2), '%.20f, %.20f' % (DSTobj.dnRBW, DSTobj.BWC)        
        
 
         
