@@ -193,6 +193,11 @@ class Host_cl():
         if migr_type == 'LoadBalancing':
             self.Final_upRBW = self.BWC - self.upBW
             self.Final_dnRBW = self.BWC - self.dnBW
+            
+            
+    def assert_RBW(self):
+        assert(self.upRBW >= 0 and self.upRBW <= self.BWC + RATE_PRECISION), '%.20f, %.20f' % (self.upRBW, self.BWC)
+            
 
     def print_out(self):
         print 'host_obj.print_out(): num', self.host_num, 'upRBW', self.upRBW, 'dnRBW', self.dnRBW
@@ -521,8 +526,30 @@ class VM_cl2():
         # assert(SRCobj.dnRBW >= 0 and SRCobj.dnRBW <= SRCobj.BWC+ RATE_PRECISION_2), '%.20f, %.20f' % (SRCobj.dnRBW, SRCobj.BWC)
         # assert(DSTobj.dnRBW >= 0 and DSTobj.dnRBW <= DSTobj.BWC+ RATE_PRECISION_2), '%.20f, %.20f' % (DSTobj.dnRBW, DSTobj.BWC)        
        
+       
 
+    # # # Super migration ==> instantly migrate VM from SRC to DST without any cost. this function deal with SRC/DST/upRBW/dnRBW varible.
+    # # # for confirmation in snapshot_gen.py to make sure the VM migration will never violate the capacity constrain at SRCs and DSTs
+    def VM_god_migration(self, all_host__dict = None):
+    
+        if all_host__dict == None:
+            all_host__dict = self.G.all_host__dict
         
+        SRCupR = all_host__dict[self.SRCnum].upRBW
+        SRCdnR = all_host__dict[self.SRCnum].dnRBW
+        DSTupR = all_host__dict[self.DSTnum].upRBW
+        DSTdnR = all_host__dict[self.DSTnum].dnRBW
+        
+        VMup = self.upSBW
+        VMdn = self.dnSBW
+
+        # release SBW at SRC
+        SRCupR += VMup
+        SRCdnR += VMdn
+        
+        # occupy SBW at DST
+        DSTupR -= VMup
+        DSTdnR -= VMdn        
         
         
         

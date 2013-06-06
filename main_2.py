@@ -70,8 +70,8 @@ tot_host_num__LIST = [
     # 4,
     # 5,
     # 8,
-    16,
-    # 64,
+    # 16,
+    64,
 ]
 
 # input_dict['src_num'] = 1
@@ -81,9 +81,9 @@ tot_host_num__LIST = [
 src_num__LIST = [
     # 1,
     # 2,
-    4,
+    # 4,
     # 8,
-    # 10,
+    10,
     # 12,
     # 24,
 ]
@@ -140,8 +140,8 @@ for tmpI2 in itertools.product(migr_type__LIST, tot_host_num__LIST, src_num__LIS
     ]
     algo_version__LIST = [
         # 'StrictSequence', 
-        'ConCurrent', 
         # 'RanSequence',
+        'ConCurrent', 
     ]
 
 

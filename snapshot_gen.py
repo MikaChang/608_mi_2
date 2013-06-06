@@ -1,9 +1,15 @@
 import math
 import random
+import copy
 
 from basic import *
 
 def migr_gen_C(type, vm_num_count, src_num, all_host__dict, all_VM__dict, src__dict):
+    
+    # # # mika for debug
+    test_all_host__dict = copy.deepcopy(all_host__dict)
+    
+    
     if type == 'vmFirst':
         vm__list = range(vm_num_count) # all the vm_num
         ### sorted by each VM's sigma+upSBW+dnSBW
@@ -40,6 +46,10 @@ def migr_gen_C(type, vm_num_count, src_num, all_host__dict, all_VM__dict, src__d
 
                     #all_host__dict[vm_obj.SRCnum].Final_upRBW -= vm_obj.upSBW
                     #all_host__dict[vm_obj.SRCnum].Final_dnRBW -= vm_obj.dnSBW
+                    
+                    # # # mika debug...
+                    vm_obj.VM_god_migration(test_all_host__dict)
+                    
                     break
                 else:
                     continue
@@ -53,6 +63,11 @@ def migr_gen_C(type, vm_num_count, src_num, all_host__dict, all_VM__dict, src__d
     for aVM in vm__list:
         if all_VM__dict[aVM].DSTnum == None: # 'There is a VM havnt alloc to DST since all the DSTs are full'
             return False
+    
+    
+    # # # mika debug...
+    for key, host_obj in test_all_host__dict.items():
+        host_obj.assert_RBW()
     
     return True
     
@@ -205,6 +220,11 @@ def snapshot_gen(G, input_dict):
         migr_gen_LB()
     
     # print each vm element
+    
+    # # # make sure the migrations in the snapshot will never exceed the capacity constrain in SRCs and DSTs
+    
+    
+    
     
     
     
