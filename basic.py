@@ -197,6 +197,7 @@ class Host_cl():
             
     def assert_RBW(self):
         assert(self.upRBW >= 0 and self.upRBW <= self.BWC + RATE_PRECISION), '%.20f, %.20f' % (self.upRBW, self.BWC)
+        assert(self.dnRBW >= 0 and self.dnRBW <= self.BWC + RATE_PRECISION), '%.20f, %.20f' % (self.dnRBW, self.BWC)
             
 
     def print_out(self):
@@ -535,21 +536,40 @@ class VM_cl2():
         if all_host__dict == None:
             all_host__dict = self.G.all_host__dict
         
-        SRCupR = all_host__dict[self.SRCnum].upRBW
-        SRCdnR = all_host__dict[self.SRCnum].dnRBW
-        DSTupR = all_host__dict[self.DSTnum].upRBW
-        DSTdnR = all_host__dict[self.DSTnum].dnRBW
+        # SRCupR = all_host__dict[self.SRCnum].upRBW
+        # SRCdnR = all_host__dict[self.SRCnum].dnRBW
+        # DSTupR = all_host__dict[self.DSTnum].upRBW
+        # DSTdnR = all_host__dict[self.DSTnum].dnRBW
         
-        VMup = self.upSBW
-        VMdn = self.dnSBW
+        # VMup = self.upSBW
+        # VMdn = self.dnSBW
+
+        # # release SBW at SRC
+        # SRCupR += VMup
+        # SRCdnR += VMdn
+        
+        # # occupy SBW at DST
+        # DSTupR -= VMup
+        # DSTdnR -= VMdn        
+        
+
+        # SRCupR = all_host__dict[self.SRCnum].upRBW
+        # SRCdnR = all_host__dict[self.SRCnum].dnRBW
+        # DSTupR = all_host__dict[self.DSTnum].upRBW
+        # DSTdnR = all_host__dict[self.DSTnum].dnRBW
+        
+        # VMup = self.upSBW
+        # VMdn = self.dnSBW
 
         # release SBW at SRC
-        SRCupR += VMup
-        SRCdnR += VMdn
+        all_host__dict[self.SRCnum].upRBW += self.upSBW
+        all_host__dict[self.SRCnum].dnRBW += self.dnSBW
         
         # occupy SBW at DST
-        DSTupR -= VMup
-        DSTdnR -= VMdn        
+        all_host__dict[self.DSTnum].upRBW -= self.upSBW
+        all_host__dict[self.DSTnum].dnRBW -= self.dnSBW                
+        
+        
         
         
         

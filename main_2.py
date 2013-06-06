@@ -82,8 +82,8 @@ src_num__LIST = [
     # 1,
     # 2,
     # 4,
-    # 8,
-    10,
+    8,
+    # 10,
     # 12,
     # 24,
 ]
@@ -129,19 +129,22 @@ for tmpI2 in itertools.product(migr_type__LIST, tot_host_num__LIST, src_num__LIS
 
 
     ### generate snapshot
-    main_gen_snapshot(input_dict, tmp_snapshot_file)
+    # keep_gen_snapshot = True
+    keep_gen_snapshot = False
+    if keep_gen_snapshot == True:
+        main_gen_snapshot(input_dict, tmp_snapshot_file)
 
-
+    dump_snapshot(tmp_snapshot_file)
 
     ### different algo setting
     migration_mode__LIST = [
         'PreCopy', 
-        'StopNCopy'
+        # 'StopNCopy'
     ]
     algo_version__LIST = [
-        # 'StrictSequence', 
+        'StrictSequence', 
         # 'RanSequence',
-        'ConCurrent', 
+        # 'ConCurrent', 
     ]
 
 

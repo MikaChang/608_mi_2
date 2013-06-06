@@ -46,6 +46,20 @@ def main_gen_snapshot(input_dict, tmp_snapshot_file):
     # return G
 
 
+def dump_snapshot(tmp_snapshot_file):
+    G_tmp = pickle.load( open( tmp_snapshot_file, "rb" ) )
+    all_host__dict = G_tmp.all_host__dict
+    all_VM__dict = G_tmp.all_VM__dict
+    
+    print '\n\n\n\n\nprint out snapshot====> start'
+    for key, obj in G_tmp.all_host__dict.items():
+        obj.print_out()
+    for key, obj in G_tmp.all_VM__dict.items():
+        obj.print_out()        
+    print 'print out snapshot====> end'    
+
+    
+    
 
 
 def main_G_run(input_dict, tmp_snapshot_file):

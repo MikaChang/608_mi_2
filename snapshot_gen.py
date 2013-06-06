@@ -230,3 +230,5 @@ def snapshot_gen(G, input_dict):
     
     print'snapshot_gen: src__dict', src__dict
     return result, all_VM__dict, all_host__dict
+
+
