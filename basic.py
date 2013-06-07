@@ -336,11 +336,14 @@ class VM_cl2():
             
             vm_num_list = sorted(list(DSTobj.sending_vm__set), key = lambda vm_num: self.G.all_VM__dict[vm_num].latest_data_rate, reverse = True)
             for i in vm_num_list:
+                if i == self.vm_num:
+                    continue
                 vm_obj = self.G.all_VM__dict[i]
                 now_rate = vm_obj.latest_data_rate
                 if now_rate > debet_dnBW:
                     new_rate = now_rate - debet_dnBW
                     vm_obj.adjust_VM_BW(new_rate)
+                    break
                     
             
         
@@ -514,11 +517,10 @@ class VM_cl2():
         SRCobj = self.G.all_host__dict[self.SRCnum]
         DSTobj = self.G.all_host__dict[self.DSTnum]
         
-        assert(SRCobj.upRBW >= 0 and SRCobj.upRBW <= SRCobj.BWC + RATE_PRECISION), '%.20f, %.20f' % (SRCobj.upRBW, SRCobj.BWC)
-        assert(DSTobj.upRBW >= 0 and DSTobj.upRBW <= DSTobj.BWC + RATE_PRECISION), '%.20f, %.20f' % (DSTobj.upRBW, DSTobj.BWC)
-
-        assert(SRCobj.dnRBW >= 0 and SRCobj.dnRBW <= SRCobj.BWC+ RATE_PRECISION), '%.20f, %.20f' % (SRCobj.dnRBW, SRCobj.BWC)
-        assert(DSTobj.dnRBW >= 0 and DSTobj.dnRBW <= DSTobj.BWC+ RATE_PRECISION), '%.20f, %.20f' % (DSTobj.dnRBW, DSTobj.BWC)
+        assert(SRCobj.upRBW >= - RATE_PRECISION  and SRCobj.upRBW <= SRCobj.BWC + RATE_PRECISION), '%.20f, %.20f' % (SRCobj.upRBW, SRCobj.BWC)
+        assert(DSTobj.upRBW >= - RATE_PRECISION  and DSTobj.upRBW <= DSTobj.BWC + RATE_PRECISION), '%.20f, %.20f' % (DSTobj.upRBW, DSTobj.BWC)
+        assert(SRCobj.dnRBW >= - RATE_PRECISION  and SRCobj.dnRBW <= SRCobj.BWC+ RATE_PRECISION), '%.20f, %.20f' % (SRCobj.dnRBW, SRCobj.BWC)
+        assert(DSTobj.dnRBW >= - RATE_PRECISION  and DSTobj.dnRBW <= DSTobj.BWC+ RATE_PRECISION), '%.20f, %.20f' % (DSTobj.dnRBW, DSTobj.BWC)
 
         RATE_PRECISION_2 = 0.5
         # assert(SRCobj.upRBW >= 0 and SRCobj.upRBW <= SRCobj.BWC + RATE_PRECISION_2), '%.20f, %.20f' % (SRCobj.upRBW, SRCobj.BWC)

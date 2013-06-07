@@ -40,3 +40,26 @@ RATE_PRECISION = 1e-6
 # # #
 # ACCEPTABLE_MINI_VMM_DATA_RATE = 0.1
 ACCEPTABLE_MINI_VMM_DATA_RATE = 1e-6
+
+
+
+MAX_COUNT_for_snapshot_gen_fail = 10
+
+
+### # # for aggregate_result_dic.py
+ALL_SETTING_LIST = [
+    'tot_host_num',
+    'src_num',
+    'migr_type',    
+    'VMmigr_gen_type',    
+    'migration_mode',
+    'algo_version',
+]
+
+ALL_RESULT_LIST = [
+    'total_vm_num',
+    'accu_vm_migration_period',
+    'sys_migration_period',    
+    'accu_vm_deployment_time',
+]
+

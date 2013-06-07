@@ -27,7 +27,7 @@ def func_Concurrent(G,initFlag):
             SRCobj.upRBW_tmp = SRCobj.upRBW
             DSTobj.dnRBW_tmp = DSTobj.dnRBW
          
-            if initFlag == True:
+            if vm_obj.status == 'waiting':
                 if G.migration_mode == 'StopNCopy':
                     SRCobj.upRBW_tmp += vm_obj.upSBW    # StopNCopy mode!!!
             else :
@@ -59,7 +59,7 @@ def func_Concurrent(G,initFlag):
     for vm_num,status in bool__dict.items():
         if status == 1:
             vm_obj = G.all_VM__dict[vm_num]
-            if initFlag == True:
+            if vm_obj.status == 'waiting':
                 vm_obj.assign_VM_BW(vm_obj.tmp_rate)
             else :
                 if vm_obj.tmp_rate != vm_obj.latest_data_rate:

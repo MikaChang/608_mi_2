@@ -41,7 +41,7 @@ def func_SS_INIT(G):
     print 'init_update_func.func_SS_INIT():  DST_GP1', DST_GP1
     for host_num in DST_GP1:
         host_obj = G.all_host__dict[host_num]
-        seq_vm_obj__list = sorted(host_obj.GPNum_to_VM__dict[1], key=lambda VM_cl2: VM_cl2.dnSBratio )
+        seq_vm_obj__list = sorted(host_obj.GPNum_to_VM__dict[1], key=lambda VM_cl2: VM_cl2.dnSBratio, reverse = True )
         
         for vm_obj in seq_vm_obj__list:
             result, miniRate = vm_obj.speed_checking(BW_mode = 'full', domi_node = 'DST')
@@ -59,7 +59,7 @@ def func_SS_INIT(G):
     for host_num in SRC_GP2:
         host_obj = G.all_host__dict[host_num]
         ### mika
-        seq_vm_obj__list = sorted(host_obj.GPNum_to_VM__dict[2], key=lambda VM_cl2: VM_cl2.upBSratio )
+        seq_vm_obj__list = sorted(host_obj.GPNum_to_VM__dict[2], key=lambda VM_cl2: VM_cl2.upSBratio )
         
         for vm_obj in seq_vm_obj__list:
             result, miniRate = vm_obj.speed_checking(BW_mode = 'full', domi_node = 'SRC')

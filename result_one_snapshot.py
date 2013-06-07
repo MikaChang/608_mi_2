@@ -33,7 +33,9 @@ def result_one_snap(G):
     output_dict['sys_migration_period'] = max_t - min_t
     output_dict['accu_vm_migration_period'] = sum(tmp_migration_period__list)
     output_dict['accu_vm_deployment_time'] = sum(tmp_over__list)
-    # output_dict['vm_migration_period__list'] = tmp_migration_period__list
+    output_dict['vm_migration_period__list'] = tmp_migration_period__list
+    output_dict['total_vm_num'] = len(G.all_VM__dict)
+    
     print '\n\nFinal result==='
     # print 'each vm migration period time', tmp_migration_period__list
     # print 'each vm migration start time', tmp_start__list

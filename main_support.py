@@ -20,6 +20,8 @@ def main_gen_snapshot(input_dict, tmp_snapshot_file):
     keep_gen_snapshot = True
     # keep_gen_snapshot = False
 
+    snapshot_gen_count_tmp = 0
+
     result = False
     while keep_gen_snapshot:
         G = Global_cl(input_dict)     #global data structure
@@ -39,11 +41,14 @@ def main_gen_snapshot(input_dict, tmp_snapshot_file):
         elif result == False:
             print 'main.py: snapshot_gen False\t', result
             print 'vm_size:', len(vm__dict), 'host_size', len(host__dict), 'src_num', input_dict['src_num']
+            snapshot_gen_count_tmp += 1
+            if snapshot_gen_count_tmp >= MAX_COUNT_for_snapshot_gen_fail:
+                return False
         else:
             assert(0)
             
     assert(result == True or keep_gen_snapshot == False)
-    # return G
+
 
 
 def dump_snapshot(tmp_snapshot_file):
@@ -64,6 +69,7 @@ def dump_snapshot(tmp_snapshot_file):
 
 def main_G_run(input_dict, tmp_snapshot_file):
 ######## Algorithm running: start
+    print 'main_support.main_G_run() gogo2: The input_dict is ==>' , input_dict['migration_mode'], input_dict['algo_version']
     G = None
     G = Global_cl(input_dict)     #global data structure
     # # use pickle to store and load G obj
@@ -110,6 +116,8 @@ def main_G_run(input_dict, tmp_snapshot_file):
     result_dict = dict()
     result_dict['input'] = input_dict
     result_dict['output'] = output_dict
+    
+    print 'main_support.main_G_run() gogo3: The input_dict is ==>' , result_dict['input']['migration_mode'], result_dict['input']['algo_version']
     
     return result_dict
     ######## Algorithm running: end
