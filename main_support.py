@@ -83,7 +83,7 @@ def main_G_run(input_dict, tmp_snapshot_file):
     if input_dict['algo_version'] == 'StrictSequence':
         func_SS_INIT(G)
     elif input_dict['algo_version'] == 'ConCurrent':
-        func_Concurrent(G, initFlag = True)
+        func_Concurrent_Init(G)
     elif input_dict['algo_version'] == 'RanSequence':
         func_ran_disjoint_init(G)
     else:

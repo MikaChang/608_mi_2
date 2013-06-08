@@ -5,7 +5,7 @@ from init_update_func import *
 from function import *
 from concurrent_case import *
 from randomCase import *
-import math
+import math, copy
 
 
 class Global_cl():
@@ -183,16 +183,20 @@ class Host_cl():
         self.upBW_tmp += vm_upSBW
         self.dnBW_tmp += vm_dnSBW
         self.sigma_tmp += vm_sigma
-        
-        
+                
         self.upRBW = self.BWC - self.upBW
         self.dnRBW = self.BWC - self.dnBW
         self.Initial_upRBW = self.BWC - self.upBW
         self.Initial_dnRBW = self.BWC - self.dnBW
+        self.Final_upRBW = self.BWC - self.upBW
+        self.Final_dnRBW = self.BWC - self.dnBW
         
-        if migr_type == 'LoadBalancing':
-            self.Final_upRBW = self.BWC - self.upBW
-            self.Final_dnRBW = self.BWC - self.dnBW
+        # ### I don't know what it means.....
+        # if migr_type == 'LoadBalancing':
+            # self.Final_upRBW = self.BWC - self.upBW
+            # self.Final_dnRBW = self.BWC - self.dnBW
+        # else:
+            # assert(0)
             
             
     def assert_RBW(self):
@@ -201,7 +205,7 @@ class Host_cl():
             
 
     def print_out(self):
-        print 'host_obj.print_out(): num', self.host_num, 'upRBW', self.upRBW, 'dnRBW', self.dnRBW
+        print 'host_obj.print_out(): num', self.host_num, 'upRBW', self.upRBW, 'dnRBW', self.dnRBW, 'self.Initial_upRBW', self.Initial_upRBW,'self.Initial_dnRBW', self.Initial_dnRBW, 'self.Final_upRBW', self.Final_upRBW, 'self.Final_dnRBW', self.Final_dnRBW
         
 class VM_cl2():
     def __init__(self, G, ori_size, vm_num, upSBW, dnSBW, sigma, SRCnum):
@@ -258,12 +262,17 @@ class VM_cl2():
         SRChost = self.G.all_host__dict[self.SRCnum]
         DSThost = self.G.all_host__dict[self.DSTnum]
         
-        SRC_now = SRChost.upRBW
+        SRC_now = SRChost.Initial_upRBW
         if self.G.migration_mode == 'StopNCopy':
             SRC_now += self.upSBW
+        else:
+            assert (self.G.migration_mode == 'PreCopy')
         SRC_end = SRChost.Final_upRBW
-        DST_now = DSThost.dnRBW
+        DST_now = DSThost.Initial_dnRBW
         DST_end = DSThost.Final_dnRBW
+        
+        # assert(SRC_now < SRC_end and DST_now < DST_end), \
+        # 'src_now %.20f src_end %.20f dst_now %.20f dst_end %.20f' % (SRC_now, SRC_end, DST_now, DST_end)
         
         if SRC_now >= DST_now and SRC_end >= DST_end:
             self.set_num = 1
@@ -280,6 +289,7 @@ class VM_cl2():
 
 ### for all parallel algo. --> vm rate may change during migraton proceedings
     def adjust_VM_BW(self, rate):  
+        assert (rate > 0), rate
         print 'basic.py:  vm_obj.adjust_VM_BW  rate=',rate, '  vm_num', self.vm_num
         # update  vm_obj.remain_size according latest_data_rate 
         last_round_migration_period = self.G.now - self.last_migration_event_schedule_time
@@ -312,6 +322,53 @@ class VM_cl2():
 
         # # # make sure src and dst RBW are reasonable
         self.assert_host_RBW()
+
+        
+        
+        
+    def concurrent_resetVM_BW(self):  
+        # update  vm_obj.remain_size according latest_data_rate 
+    
+        assert(self.status == 'sending')
+        SRCobj = self.G.all_host__dict[self.SRCnum]
+        DSTobj = self.G.all_host__dict[self.DSTnum]
+        
+        #release old data rate for SRC and DST
+        assert(SRCobj.upRBW >= 0), SRCobj.upRBW
+        assert(DSTobj.dnRBW >= 0), DSTobj.dnRBW
+        SRCobj.upRBW += self.latest_data_rate
+        DSTobj.dnRBW += self.latest_data_rate
+
+    def concurrent_adjust_VM_BW(self, rate):  
+        # update  vm_obj.remain_size according latest_data_rate 
+        last_round_migration_period = self.G.now - self.last_migration_event_schedule_time
+        self.remain_size -= float(last_round_migration_period) * self.latest_data_rate
+    
+        assert(self.status == 'sending')
+        SRCobj = self.G.all_host__dict[self.SRCnum]
+        DSTobj = self.G.all_host__dict[self.DSTnum]
+        
+        #release old data rate for SRC and DST
+        assert(SRCobj.upRBW >= 0), SRCobj.upRBW
+        assert(DSTobj.dnRBW >= 0), DSTobj.dnRBW
+        SRCobj.upRBW -= rate
+        DSTobj.dnRBW -= rate
+
+        assert(SRCobj.upRBW >= 0), SRCobj.upRBW
+        assert(DSTobj.dnRBW >= 0), '%.50f, %.50f, %d' %(DSTobj.dnRBW,rate,self.vm_num)
+        self.latest_data_rate = rate
+                
+        ### schedule Event_cl() into event list
+        finish_time = self.compute_finish_time()
+        tmp_info__dict = dict()
+        tmp_type = 'vm_finish'
+        event_obj = Event_cl(self.G, tmp_type, finish_time, self.vm_num, tmp_info__dict)
+        
+        assert (self.migration_start_time != 0)        
+        self.G.E.insert_event_obj(event_obj)
+
+        # # # make sure src and dst RBW are reasonable
+        self.assert_host_RBW()        
         
 
     def release_BW(self):   # release the BW usage.   SRC release uplink, DST release dnlink
@@ -325,9 +382,10 @@ class VM_cl2():
         SRCobj.upRBW += self.latest_data_rate
         DSTobj.dnRBW += self.latest_data_rate
         
-        # # #before activation, try to make sure that RBW is enough for activation
+        # # #before activation VM at DST, try to make sure that RBW is enough for activation
         up_BWshortage = DSTobj.upRBW - self.upSBW
         dn_BWshortage = DSTobj.dnRBW - self.dnSBW
+        ongoing_SRC_VM_rate_adjust = False
         if (up_BWshortage < 0 or dn_BWshortage < 0):
             None
             # assert(0), 'up_BWshortage: %f  dn_BWshortage: %f ' % (up_BWshortage, dn_BWshortage)
@@ -343,18 +401,24 @@ class VM_cl2():
                 if now_rate > debet_dnBW:
                     new_rate = now_rate - debet_dnBW
                     vm_obj.adjust_VM_BW(new_rate)
-                    break
+                    ongoing_SRC_VM_rate_adjust = True
+                    SRCobj = self.G.all_host__dict[vm_obj.SRCnum]
+
                     
-            
-        
-        # # # VM activation:  vm service BW will decrease DST upRBW and dnRBW
+                    break
+            assert(ongoing_SRC_VM_rate_adjust == True)
+        # # # VM activation at DST:  vm service BW will decrease DST upRBW and dnRBW
         DSTobj.upRBW -= self.upSBW
         DSTobj.dnRBW -= self.dnSBW
+        DSTobj.Initial_upRBW -= self.upSBW
+        DSTobj.Initial_dnRBW -= self.dnSBW
         
         # # # release the BW used by vm service at src
         if self.G.migration_mode == 'PreCopy':
             SRCobj.upRBW += self.upSBW    # PreCopy mode!!!
             SRCobj.dnRBW += self.dnSBW    # PreCopy mode!!!
+            SRCobj.Initial_upRBW += self.upSBW    # StopNCopy mode!!!
+            SRCobj.Initial_dnRBW += self.dnSBW    # StopNCopy mode!!!
         else:
             assert (self.G.migration_mode == 'StopNCopy')
             
@@ -363,11 +427,20 @@ class VM_cl2():
         
         SRCobj.sending_vm__set -= set([self.vm_num])
         DSTobj.sending_vm__set -= set([self.vm_num])        
-        
         ###update vm_obj.status
         self.next_status()
 
         self.migration_over_time = self.G.now
+        
+        
+        # # #  adjust ongoing VM rate at SRC
+        if ongoing_SRC_VM_rate_adjust == True:
+            for vm_num in SRCobj.sending_vm__set:
+                vm_obj = G.all_VM__dict[vm_num]
+                old_rate = vm_obj.latest_data_rate
+                result, dataRate = vm_obj.speed_checking('partial',None)
+                
+        
         
         # # # make sure src and dst RBW are reasonable
         self.assert_host_RBW()
@@ -380,22 +453,23 @@ class VM_cl2():
             return
         else:
             print 'basic.py  vm_obj.migration_over() vm_num=', self.vm_num
-        
-        self.release_BW()
+        if self.G.algo_version != 'ConCurrent':
+            self.release_BW()
         
         if self.G.algo_version == 'StrictSequence':
             func_SS_update_ongoing(self.G,self.vm_num)
             ### can change to multiple SS G functions
-            func_SS(self.G, 1, 'random')
-            func_SS(self.G, 2, 'random')            
+            func_SS(self.G, 1, 'random', self.vm_num)
+            func_SS(self.G, 2, 'random', self.vm_num)
         elif self.G.algo_version == 'ConCurrent':
-            func_Concurrent(self.G, initFlag = False)
+            func_Concurrent_Ongoing(self.G,self.vm_num)
         elif self.G.algo_version == 'RanSequence':
             func_ran_disjoint_ongoing(self.G, self.vm_num)
         
         
     def assign_VM_BW(self, rate):       
         print 'basic.py:  vm_obj.assign_VM_BW  rate=',rate, '  vm_num', self.vm_num
+        assert(rate > 0), rate
         assert(self.status == 'waiting')
     
         ### assign VM BW into SRC, DST
@@ -404,6 +478,8 @@ class VM_cl2():
         if self.G.migration_mode == 'StopNCopy':
             SRCobj.upRBW += self.upSBW    # StopNCopy mode!!!
             SRCobj.dnRBW += self.dnSBW    # StopNCopy mode!!!
+            SRCobj.Initial_upRBW += self.upSBW    # StopNCopy mode!!!
+            SRCobj.Initial_dnRBW += self.dnSBW    # StopNCopy mode!!!
         else:
             assert (self.G.migration_mode == 'PreCopy')
             
@@ -466,8 +542,8 @@ class VM_cl2():
         
         SRCobj = self.G.all_host__dict[self.SRCnum]
         DSTobj = self.G.all_host__dict[self.DSTnum]
-        upRate = SRCobj.upRBW
-        dnRate = DSTobj.dnRBW
+        upRate = copy.copy(SRCobj.upRBW)
+        dnRate = copy.copy(DSTobj.dnRBW)
         
         if self.status == 'sending':
             upRate += self.latest_data_rate
@@ -521,7 +597,19 @@ class VM_cl2():
         assert(DSTobj.upRBW >= - RATE_PRECISION  and DSTobj.upRBW <= DSTobj.BWC + RATE_PRECISION), '%.20f, %.20f' % (DSTobj.upRBW, DSTobj.BWC)
         assert(SRCobj.dnRBW >= - RATE_PRECISION  and SRCobj.dnRBW <= SRCobj.BWC+ RATE_PRECISION), '%.20f, %.20f' % (SRCobj.dnRBW, SRCobj.BWC)
         assert(DSTobj.dnRBW >= - RATE_PRECISION  and DSTobj.dnRBW <= DSTobj.BWC+ RATE_PRECISION), '%.20f, %.20f' % (DSTobj.dnRBW, DSTobj.BWC)
-
+        
+        assert(SRCobj.Initial_upRBW >= - RATE_PRECISION  and SRCobj.Initial_upRBW <= SRCobj.BWC + RATE_PRECISION), '%.20f, %.20f' % (SRCobj.Initial_upRBW, SRCobj.BWC)
+        assert(DSTobj.Initial_upRBW >= - RATE_PRECISION  and DSTobj.Initial_upRBW <= DSTobj.BWC + RATE_PRECISION), '%.20f, %.20f' % (DSTobj.Initial_upRBW, DSTobj.BWC)
+        assert(SRCobj.Initial_dnRBW >= - RATE_PRECISION  and SRCobj.Initial_dnRBW <= SRCobj.BWC+ RATE_PRECISION), '%.20f, %.20f' % (SRCobj.Initial_dnRBW, SRCobj.BWC)
+        assert(DSTobj.Initial_dnRBW >= - RATE_PRECISION  and DSTobj.Initial_dnRBW <= DSTobj.BWC+ RATE_PRECISION), '%.20f, %.20f' % (DSTobj.Initial_dnRBW, DSTobj.BWC)
+        
+        assert(SRCobj.Final_upRBW >= - RATE_PRECISION  and SRCobj.Final_upRBW <= SRCobj.BWC + RATE_PRECISION), '%.20f, %.20f' % (SRCobj.Final_upRBW, SRCobj.BWC)
+        assert(DSTobj.Final_upRBW >= - RATE_PRECISION  and DSTobj.Final_upRBW <= DSTobj.BWC + RATE_PRECISION), '%.20f, %.20f' % (DSTobj.Final_upRBW, DSTobj.BWC)
+        assert(SRCobj.Final_dnRBW >= - RATE_PRECISION  and SRCobj.Final_dnRBW <= SRCobj.BWC+ RATE_PRECISION), '%.20f, %.20f' % (SRCobj.Final_dnRBW, SRCobj.BWC)
+        assert(DSTobj.Final_dnRBW >= - RATE_PRECISION  and DSTobj.Final_dnRBW <= DSTobj.BWC+ RATE_PRECISION), '%.20f, %.20f' % (DSTobj.Final_dnRBW, DSTobj.BWC)
+        
+        
+        
         RATE_PRECISION_2 = 0.5
         # assert(SRCobj.upRBW >= 0 and SRCobj.upRBW <= SRCobj.BWC + RATE_PRECISION_2), '%.20f, %.20f' % (SRCobj.upRBW, SRCobj.BWC)
         # assert(DSTobj.upRBW >= 0 and DSTobj.upRBW <= DSTobj.BWC + RATE_PRECISION_2), '%.20f, %.20f' % (DSTobj.upRBW, DSTobj.BWC)

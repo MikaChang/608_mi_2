@@ -80,9 +80,9 @@ while ( path.exists(mika_go_PATH) == True or run_count == 0):
         # 4,
         # 5,
         # 8,
-        16,
+        # 16,
         # 64,
-        # 128,
+        128,
     ]
 
     # input_dict['src_num'] = 1
@@ -91,19 +91,19 @@ while ( path.exists(mika_go_PATH) == True or run_count == 0):
     # input_dict['src_num'] = 12
     src_num__LIST = [
         # 1,
-        2,
-        4,
+        # 2,
+        # 4,
         # 8,
         # 10,
         # 12,
-        # 24,
+        24,
         # 48,
     ]
 
     # input_dict['VMmigr_gen_type'] = 'srcFirst'  #'vmFirst' or 'srcFirst'.
     # input_dict['VMmigr_gen_type'] = 'vmFirst'  #'vmFirst' or 'srcFirst'.
     VMmigr_gen_type__LIST = [
-        'vmFirst',
+        # 'vmFirst',
         'srcFirst',
     ]
 
@@ -139,7 +139,7 @@ while ( path.exists(mika_go_PATH) == True or run_count == 0):
             input_dict [" dst_sigmaC_range "] = (30, 50)
             
         # ###for use in snapshot_gen.py  parameters about VM
-        vm_tmp = (10, 15)
+        vm_tmp = (1, 3)
         input_dict [" vm_upSBW_range "] = vm_tmp
         input_dict [" vm_dnSBW_range "] = vm_tmp
         input_dict [" vm_sigma_range "] = vm_tmp
@@ -162,16 +162,16 @@ while ( path.exists(mika_go_PATH) == True or run_count == 0):
                 assert(0)
                 continue
 
-        dump_snapshot(tmp_snapshot_file)
+        
 
         ### different algo setting
         migration_mode__LIST = [
             'PreCopy', 
-            'StopNCopy',
+            # 'StopNCopy',
         ]
         algo_version__LIST = [
-            'StrictSequence', 
-            # 'RanSequence',
+            # 'StrictSequence', 
+            'RanSequence',
             # 'ConCurrent', 
         ]
 
@@ -181,7 +181,7 @@ while ( path.exists(mika_go_PATH) == True or run_count == 0):
             input_dict['algo_version'] = tmpI[1]        
             print '\n\n==========>> new iteration'
             print 'this iteration gogo1: The input_dict is ==>' , input_dict['migration_mode'], input_dict['algo_version']
-            
+            dump_snapshot(tmp_snapshot_file)
             result_dict = main_G_run(input_dict, tmp_snapshot_file)
             input_dict_tmp = result_dict['input']
             result_dict['input'] = input_dict

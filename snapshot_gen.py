@@ -34,7 +34,7 @@ def migr_gen_C(type, vm_num_count, src_num, all_host__dict, all_VM__dict, src__d
                 (dst_obj.sigma_tmp + vm_sigma < dst_obj.sigmaC):
                     vm_obj.DSTnum = aHost
                     # # #print_out every info in vm_obj
-                    vm_obj.print_out()
+                    # vm_obj.print_out()
                     
                     # record the future service requirement in DST host    1)# dst_obj.upBW_tmp    2)# dst_obj.dnBW_tmp    3)# dst_obj.sigma_tmp
                     dst_obj.upBW_tmp += vm_upSBW
@@ -44,8 +44,9 @@ def migr_gen_C(type, vm_num_count, src_num, all_host__dict, all_VM__dict, src__d
                     dst_obj.Final_upRBW -= vm_upSBW
                     dst_obj.Final_dnRBW -= vm_dnSBW
 
-                    #all_host__dict[vm_obj.SRCnum].Final_upRBW -= vm_obj.upSBW
-                    #all_host__dict[vm_obj.SRCnum].Final_dnRBW -= vm_obj.dnSBW
+                    # # # update the SRC Final RBW
+                    all_host__dict[vm_obj.SRCnum].Final_upRBW += vm_upSBW
+                    all_host__dict[vm_obj.SRCnum].Final_dnRBW += vm_dnSBW
                     
                     # # # mika debug...
                     vm_obj.VM_god_migration(test_all_host__dict)
@@ -97,12 +98,15 @@ def migr_gen_C(type, vm_num_count, src_num, all_host__dict, all_VM__dict, src__d
                         
                         
                         # # #print_out every info in vm_obj
-                        vm_obj.print_out()
+                        # vm_obj.print_out()
                         dst_obj.Final_upRBW -= vm_upSBW
                         dst_obj.Final_dnRBW -= vm_dnSBW
 
-                        #all_host__dict[vm_obj.SRCnum].Final_upRBW -= vm_obj.upSBW
-                        #all_host__dict[vm_obj.SRCnum].Final_dnRBW -= vm_obj.dnSBW
+                        
+                        # # # update the SRC Final RBW
+                        all_host__dict[vm_obj.SRCnum].Final_upRBW += vm_upSBW
+                        all_host__dict[vm_obj.SRCnum].Final_dnRBW += vm_dnSBW
+                        
                         break
                     else:
                         continue
@@ -237,7 +241,7 @@ def snapshot_gen(G, input_dict):
                     vm_num_count += 1 # equals to exact vm_number - 1
                 else:
                     break
-            host_obj.print_out()
+            # host_obj.print_out()
 
         else: # DST
             # print 'snapshot_gen.py SRC generate'
@@ -261,7 +265,7 @@ def snapshot_gen(G, input_dict):
                     host_obj.update(vm_upSBW, vm_dnSBW, vm_sigma, 'Consolidation')
                 else:
                     break
-            host_obj.print_out()
+            # host_obj.print_out()
             
             
         all_host__dict[i] = host_obj
@@ -280,7 +284,8 @@ def snapshot_gen(G, input_dict):
     # # # make sure the migrations in the snapshot will never exceed the capacity constrain in SRCs and DSTs
     
     
-    
+    # for key, obj in all_host__dict.items():
+        # obj.print_out()
     
     
     
