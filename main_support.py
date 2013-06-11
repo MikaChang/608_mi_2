@@ -12,10 +12,11 @@ import pickle
 import os
 import itertools
 import pprint
+import copy
 
 
+def main_gen_snapshot(input_dict_tmp, tmp_snapshot_file):
 
-def main_gen_snapshot(input_dict, tmp_snapshot_file):
     # generate VM and hosts, if at least one VM have not DST --> re-run snapshot_gen_func again
     keep_gen_snapshot = True
     # keep_gen_snapshot = False
@@ -24,9 +25,12 @@ def main_gen_snapshot(input_dict, tmp_snapshot_file):
 
     result = False
     while keep_gen_snapshot:
+        input_dict = copy.deepcopy(input_dict_tmp)
         G = Global_cl(input_dict)     #global data structure
         result, vm__dict, host__dict = snapshot_gen(G, input_dict)
-
+        print '\n\n\nmain_support.py snapshot_gen out  =result, len(vm), len(host)', result, len(vm__dict), len(host__dict)
+        assert((vm__dict) >= 0 and len(host__dict) >= 0), (len(vm__dict), len(host__dict))
+        
         if result == True:
             print 'main.py: snapshot_gen True \t', result
             print 'vm_size:', len(vm__dict), 'host_size', len(host__dict)
@@ -43,6 +47,7 @@ def main_gen_snapshot(input_dict, tmp_snapshot_file):
             print 'vm_size:', len(vm__dict), 'host_size', len(host__dict), 'src_num', input_dict['src_num']
             snapshot_gen_count_tmp += 1
             if snapshot_gen_count_tmp >= MAX_COUNT_for_snapshot_gen_fail:
+                assert(0)
                 return False
         else:
             assert(0)
@@ -60,7 +65,7 @@ def dump_snapshot(tmp_snapshot_file):
     for key, obj in G_tmp.all_host__dict.items():
         obj.print_out()
     for key, obj in G_tmp.all_VM__dict.items():
-        obj.print_out()        
+        obj.print_out()
     print 'print out snapshot====> end'    
 
     
@@ -121,3 +126,4 @@ def main_G_run(input_dict, tmp_snapshot_file):
     
     return result_dict
     ######## Algorithm running: end
+

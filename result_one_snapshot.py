@@ -7,8 +7,8 @@ def result_one_snap(G):
     output_dict['sys_migration_period'] = None
     output_dict['accu_vm_migration_period'] = None
         
-    min_migration_start_time = None
-    max_migration_over_time = None
+    # min_migration_start_time = None
+    # max_migration_over_time = None
 
     
     tmp_start__list = list()

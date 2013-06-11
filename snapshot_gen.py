@@ -4,6 +4,8 @@ import copy
 
 from basic import *
 
+# # # ^^^random.randint^^^ ==> ^^^random.randint^^^
+
 def migr_gen_C(type, vm_num_count, src_num, all_host__dict, all_VM__dict, src__dict):
     
     # # # mika for debug
@@ -117,7 +119,7 @@ def migr_gen_C(type, vm_num_count, src_num, all_host__dict, all_VM__dict, src__d
     
     for aVM in vm__list:
         if all_VM__dict[aVM].DSTnum == None: # 'There is a VM havnt alloc to DST since all the DSTs are full'
-            return False
+            return (False, None, None)
     
     
     # # # mika debug...
@@ -125,10 +127,157 @@ def migr_gen_C(type, vm_num_count, src_num, all_host__dict, all_VM__dict, src__d
         host_obj.assert_RBW()
     
     return True
-    
-def migr_gen_LB():
-    None
 
+    
+    
+def migr_gen_LB(vm_sel_mode, vm_sigma_range, src_num, all_host__dict, all_VM__dict, src__dict):
+    
+        # # # mika for debug
+    test_all_host__dict = copy.deepcopy(all_host__dict)
+    
+    # sort the SRC/DST by sigma
+    src__list = range(src_num)
+    src__list = sorted(src__list, key = lambda host_idx: all_host__dict[host_idx].sigma_tmp, reverse = True)
+    dst__list = range(src_num, len(all_host__dict))
+    dst__list = sorted(dst__list, key = lambda host_idx: all_host__dict[host_idx].sigma_tmp)
+    
+    # target_host initialization
+    target_src_idx = src__list[0] # the fullest SRC
+    target_dst_idx = dst__list[0] # the emptiest DST
+    target_src = all_host__dict[target_src_idx]
+    target_dst = all_host__dict[target_dst_idx]
+    
+    # # tmp_vm__list initialization
+    # if vm_sel_mode == 'ascending':
+        # tmp_vm__list = sorted(src__dict[target_src_idx], key = lambda vm_idx: all_VM__dict[vm_idx].sigma)
+    # elif vm_sel_mode == 'descending':
+        # tmp_vm__list = sorted(src__dict[target_src_idx], key = lambda vm_idx: all_VM__dict[vm_idx].sigma, reverse = True)
+    # elif vm_sel_mode == 'random':
+        # tmp_vm__list = random.sample(src__dict[target_src_idx], len(src__dict[target_src_idx]))
+    # else:
+        # assert(0), 'vm_sel_mode error'
+    
+    migrated_vm__set = set()
+    
+    while (target_src.sigma_tmp - target_dst.sigma_tmp) > vm_sigma_range[1]:
+        
+        
+        src_idx = src__list[0] # the fullest SRC
+        dst_idx = dst__list[0] # the emptiest DST
+        dst_obj = all_host__dict[dst_idx]
+        src_obj = all_host__dict[src_idx]
+        
+        print 'src_idx = ', src_idx
+        print 'src_idx = ', src__list[0], 'sigma = ', target_src.sigma_tmp
+        print 'dst_idx = ', dst__list[0], 'sigma = ', target_dst.sigma_tmp
+        
+        print 'difference = ', target_src.sigma_tmp - target_dst.sigma_tmp
+        print 'sigma range = ', vm_sigma_range[1]
+        
+        # if vm_sel_mode == 'ascending':
+            # tmp_vm__list = sorted(src__dict[src_idx], key = lambda vm_idx: all_VM__dict[vm_idx].sigma)
+        # elif vm_sel_mode == 'descending':
+            # tmp_vm__list = sorted(src__dict[src_idx], key = lambda vm_idx: all_VM__dict[vm_idx].sigma, reverse = True)
+        # elif vm_sel_mode == 'random':
+            # tmp_vm__list = random.sample(src__dict[src_idx], len(src__dict[src_idx]))
+        # else:
+            # assert(0), 'vm_sel_mode error'
+        
+        # # select a VM
+        # print 'length of tmp_vm__list = ', len(tmp_vm__list)
+        # vm_obj_idx = tmp_vm__list[0]
+        # del tmp_vm__list[0]
+        # vm_obj = all_VM__dict[vm_obj_idx]
+        
+        if vm_sel_mode == 'ascending':
+            src__dict[src_idx] = sorted(src__dict[src_idx], key = lambda vm_idx: all_VM__dict[vm_idx].sigma)
+        elif vm_sel_mode == 'descending':
+            src__dict[src_idx] = sorted(src__dict[src_idx], key = lambda vm_idx: all_VM__dict[vm_idx].sigma, reverse = True)
+        elif vm_sel_mode == 'random':
+            src__dict[src_idx] = random.sample(src__dict[src_idx], len(src__dict[src_idx]))
+        else:
+            assert(0), 'vm_sel_mode error'
+        
+        # select a VM
+        print 'length of src__dict[src_idx] = ', len(src__dict[src_idx]), '\n\n'
+        vm_obj_idx = src__dict[src_idx][0]
+        del src__dict[src_idx][0]
+        vm_obj = all_VM__dict[vm_obj_idx]
+        
+        vm_upSBW = vm_obj.upSBW
+        vm_dnSBW = vm_obj.dnSBW
+        vm_sigma = vm_obj.sigma
+        
+        # migrate to a DST
+        if (dst_obj.upBW_tmp + vm_upSBW < dst_obj.BWC) & \
+        (dst_obj.dnBW_tmp + vm_dnSBW < dst_obj.BWC) & \
+        (dst_obj.sigma_tmp + vm_sigma < dst_obj.sigmaC):
+            
+            vm_obj.DSTnum = dst_idx
+            
+            # record the future service requirement in DST host    1)# dst_obj.upBW_tmp    2)# dst_obj.dnBW_tmp    3)# dst_obj.sigma_tmp
+            dst_obj.upBW_tmp += vm_upSBW
+            dst_obj.dnBW_tmp += vm_dnSBW
+            dst_obj.sigma_tmp += vm_sigma                    
+            
+            # # #print_out every info in vm_obj
+            # vm_obj.print_out()
+            dst_obj.Final_upRBW -= vm_upSBW
+            dst_obj.Final_dnRBW -= vm_dnSBW
+
+            all_host__dict[vm_obj.SRCnum].Final_upRBW += vm_upSBW
+            all_host__dict[vm_obj.SRCnum].Final_dnRBW += vm_dnSBW
+            
+            # # # mika debug...
+            vm_obj.VM_god_migration(test_all_host__dict)
+            
+            src_obj.sigma_tmp -= vm_sigma
+            migrated_vm__set.add(vm_obj_idx)
+            
+        else:
+            assert(0), 'the fullest SRC cannot migr VM to the emptiest DST'
+        
+        # sort SRC/DST again
+        src__list = sorted(src__list, key = lambda host_idx: all_host__dict[host_idx].sigma_tmp, reverse = True)
+        dst__list = sorted(dst__list, key = lambda host_idx: all_host__dict[host_idx].sigma_tmp)
+        
+        target_src = all_host__dict[src__list[0]]
+        target_dst = all_host__dict[dst__list[0]]
+        
+    # print 'all_VM__dict is ', all_VM__dict
+    
+    # delete unmigrated VMs in all_VM__dict
+    copy_all_VM__set = set()
+    for key, value in all_VM__dict.items():
+        copy_all_VM__set.add(key)
+    
+    # print 'cp_VM__set is ', copy_all_VM__set
+    
+    to_be_del_vm__set = copy_all_VM__set - migrated_vm__set
+    
+    print 'migrated_vm__set is ', migrated_vm__set
+    print 'to_be_del_vm__set', to_be_del_vm__set
+    
+    tmp__list = list(to_be_del_vm__set)
+    for vm_idx in tmp__list:
+        del all_VM__dict[vm_idx]
+    
+    # print 'all_VM__dict before rerification is ', all_VM__dict
+    
+    for key, vm_obj in all_VM__dict.items():
+        if vm_obj.DSTnum == None: # 'There is a VM havnt alloc to DST since all the DSTs are full'
+            return False
+
+
+
+    # # # mika debug...
+    for key, host_obj in test_all_host__dict.items():
+        host_obj.assert_RBW()
+        
+    return True
+    
+
+    
 def snapshot_gen(G, input_dict):
     ### tot_host_num can be 16 or 64
     ### src_num can be [4, 8, 12] in 16_mode
@@ -216,16 +365,16 @@ def snapshot_gen(G, input_dict):
             src__dict[i] = list()
             host_obj = Host_cl(G, 'SRC', i)
             
-            src_upBWC = random.uniform(src_upBWC_range[0], src_upBWC_range[1])
-            src_dnBWC = random.uniform(src_dnBWC_range[0], src_dnBWC_range[1])
-            src_sigmaC = random.uniform(src_sigmaC_range[0], src_sigmaC_range[1])
+            src_upBWC = random.randint(src_upBWC_range[0], src_upBWC_range[1])
+            src_dnBWC = random.randint(src_dnBWC_range[0], src_dnBWC_range[1])
+            src_sigmaC = random.randint(src_sigmaC_range[0], src_sigmaC_range[1])
             # print 'snapshot_gen.py new SRC, src_num, upBW, dnBW, sigma', i, src_upBWC, src_dnBWC, src_sigmaC
             
             while 1:
-                vm_upSBW = random.uniform(vm_upSBW_range[0], vm_upSBW_range[1])
-                vm_dnSBW = random.uniform(vm_dnSBW_range[0], vm_dnSBW_range[1])
-                vm_sigma = random.uniform(vm_sigma_range[0], vm_sigma_range[1])
-                vm_ori_size = random.uniform(vm_ori_size_range[0], vm_ori_size_range[1])
+                vm_upSBW = random.randint(vm_upSBW_range[0], vm_upSBW_range[1])
+                vm_dnSBW = random.randint(vm_dnSBW_range[0], vm_dnSBW_range[1])
+                vm_sigma = random.randint(vm_sigma_range[0], vm_sigma_range[1])
+                vm_ori_size = random.randint(vm_ori_size_range[0], vm_ori_size_range[1])
                 
                 if (host_obj.upBW + vm_upSBW <= src_upBWC) &\
                 (host_obj.dnBW + vm_dnSBW <= src_dnBWC) &\
@@ -247,16 +396,16 @@ def snapshot_gen(G, input_dict):
             # print 'snapshot_gen.py SRC generate'
             host_obj = Host_cl(G, 'DST', i)
             
-            dst_upBWC = random.uniform(dst_upBWC_range[0], dst_upBWC_range[1])
-            dst_dnBWC = random.uniform(dst_dnBWC_range[0], dst_dnBWC_range[1])
-            dst_sigmaC = random.uniform(dst_sigmaC_range[0], dst_sigmaC_range[1])
+            dst_upBWC = random.randint(dst_upBWC_range[0], dst_upBWC_range[1])
+            dst_dnBWC = random.randint(dst_dnBWC_range[0], dst_dnBWC_range[1])
+            dst_sigmaC = random.randint(dst_sigmaC_range[0], dst_sigmaC_range[1])
             # print 'snapshot_gen.py new DST, dst_num, upBW, dnBW, sigma', dst_upBWC, dst_dnBWC, dst_sigmaC
             
             while 1:
-                vm_upSBW = random.uniform(vm_upSBW_range[0], vm_upSBW_range[1])
-                vm_dnSBW = random.uniform(vm_dnSBW_range[0], vm_dnSBW_range[1])
-                vm_sigma = random.uniform(vm_sigma_range[0], vm_sigma_range[1])
-                vm_ori_size = random.uniform(vm_ori_size_range[0], vm_ori_size_range[1])
+                vm_upSBW = random.randint(vm_upSBW_range[0], vm_upSBW_range[1])
+                vm_dnSBW = random.randint(vm_dnSBW_range[0], vm_dnSBW_range[1])
+                vm_sigma = random.randint(vm_sigma_range[0], vm_sigma_range[1])
+                vm_ori_size = random.randint(vm_ori_size_range[0], vm_ori_size_range[1])
                 
                 if (host_obj.upBW + vm_upSBW <= dst_upBWC) &\
                 (host_obj.dnBW + vm_dnSBW <= dst_dnBWC) &\
@@ -276,8 +425,10 @@ def snapshot_gen(G, input_dict):
     if migr_type == 'Consolidation':
         # result = True or False : indicating whether the snapshot is successfully generated or not
         result = migr_gen_C(G.VMmigr_gen_type, vm_num_count, src_num, all_host__dict, all_VM__dict, src__dict)
-    else: # LB case
-        migr_gen_LB()
+    elif migr_type == 'LoadBalancing': # LB case
+        result = migr_gen_LB(G.input_dict['vm_sel_mode'], vm_sigma_range, src_num, all_host__dict, all_VM__dict, src__dict)
+    else:
+        assert(0)
     
     # print each vm element
     
@@ -286,6 +437,11 @@ def snapshot_gen(G, input_dict):
     
     # for key, obj in all_host__dict.items():
         # obj.print_out()
+    
+
+    if len(all_VM__dict) <= 0 or len(all_host__dict) <= 0:
+        result = False
+    
     
     
     

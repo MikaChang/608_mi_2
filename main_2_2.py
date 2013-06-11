@@ -101,11 +101,11 @@ while ( path.exists(mika_go_PATH) == True or run_count == 0):
         # 1,
         # 2,
         # 4,
-        # 8,
-        # 10,
-        # 12,
-        # 24,
-        # 36,
+        8,
+        10,
+        12,
+        24,
+        36,
         48,
         # 50,
         # 62,
@@ -163,7 +163,7 @@ while ( path.exists(mika_go_PATH) == True or run_count == 0):
             input_dict [" dst_sigmaC_range "] = dst_tmp
             
         # ###for use in snapshot_gen.py  parameters about VM
-        vm_tmp = (10, 20)
+        vm_tmp = (1, 3)
         input_dict [" vm_upSBW_range "] = vm_tmp
         input_dict [" vm_dnSBW_range "] = vm_tmp
         input_dict [" vm_sigma_range "] = vm_tmp
@@ -179,7 +179,7 @@ while ( path.exists(mika_go_PATH) == True or run_count == 0):
         tmp_snapshot_file = './snapshot_archive/%s.tmp' % (main_count)
         # tmp_snapshot_file = 'tmp_snapshot_file.tmp'
         keep_gen_snapshot = True
-        # keep_gen_snapshot = False
+        keep_gen_snapshot = False
         if keep_gen_snapshot == True:
             gen_result = main_gen_snapshot(input_dict, tmp_snapshot_file)
             if gen_result == False:
@@ -192,12 +192,12 @@ while ( path.exists(mika_go_PATH) == True or run_count == 0):
         ### different algo setting
         migration_mode__LIST = [
             'PreCopy', 
-            # 'StopNCopy',
+            'StopNCopy',
         ]
         algo_version__LIST = [
-            'StrictSequence', 
+            # 'StrictSequence', 
             'RanSequence',
-            'ConCurrent', 
+            # 'ConCurrent', 
         ]
 
 
@@ -205,7 +205,7 @@ while ( path.exists(mika_go_PATH) == True or run_count == 0):
         # # # SS only  'full' , or 'partial' ==> used in basic.py speed_checking()
         SS_level__LIST = [
             'full',
-            # 'partial'
+            'partial'
         ]
 
         for tmpI in itertools.product(migration_mode__LIST, algo_version__LIST, SS_level__LIST):

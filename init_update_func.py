@@ -28,7 +28,21 @@ def update_SetNum_GPNum_to_vm_to_host(G):
     G.GPNum_to_VM__dict[2] = G.SetNum_to_VM__dict[2] | G.SetNum_to_VM__dict[3]
     G.GPNum_to_host__dict[1] = G.SetNum_to_host__dict[1]
     G.GPNum_to_host__dict[2] = G.SetNum_to_host__dict[2] | G.SetNum_to_host__dict[3] - G.SetNum_to_host__dict[1]
+    print 'update_SetNum_GPNum_to_vm_to_host()'
+    
+    print '\tSet1_host', G.SetNum_to_host__dict[1]
+    print '\tSet2_host', G.SetNum_to_host__dict[2]
+    print '\tSet3_host', G.SetNum_to_host__dict[3]
+    
+    print '\tSet1_VM', G.SetNum_to_VM__dict[1]
+    print '\tSet2_VM', G.SetNum_to_VM__dict[2]
+    print '\tSet3_VM', G.SetNum_to_VM__dict[3]
 
+    print '\tGP1_host', G.GPNum_to_host__dict[1]
+    print '\tGP2_host', G.GPNum_to_host__dict[2]
+    
+    print '\tGP1_VM', G.GPNum_to_VM__dict[1]
+    print '\tGP2_VM', G.GPNum_to_VM__dict[2], '\n'
 
 
 def func_SS_INIT(G):
@@ -159,3 +173,18 @@ def func_SS_update_ongoing(G,finish_vm):
     G.GPNum_to_VM__dict[2] = G.SetNum_to_VM__dict[2] | G.SetNum_to_VM__dict[3]
     G.GPNum_to_host__dict[1] = G.SetNum_to_host__dict[1]
     G.GPNum_to_host__dict[2] = G.SetNum_to_host__dict[2] | G.SetNum_to_host__dict[3] - G.SetNum_to_host__dict[1]
+    print 'func_SS_update_ongoing()'
+    
+    print '\tSet1_host', G.SetNum_to_host__dict[1]
+    print '\tSet2_host', G.SetNum_to_host__dict[2]
+    print '\tSet3_host', G.SetNum_to_host__dict[3]
+    
+    print '\tSet1_VM', G.SetNum_to_VM__dict[1]
+    print '\tSet2_VM', G.SetNum_to_VM__dict[2]
+    print '\tSet3_VM', G.SetNum_to_VM__dict[3]
+
+    print '\tGP1_host', G.GPNum_to_host__dict[1]
+    print '\tGP2_host', G.GPNum_to_host__dict[2]
+    
+    print '\tGP1_VM', G.GPNum_to_VM__dict[1]
+    print '\tGP2_VM', G.GPNum_to_VM__dict[2], '\n'

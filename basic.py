@@ -9,11 +9,11 @@ import math, copy
 
 
 class Global_cl():
-    def __init__(self, input_dict):    
+    def __init__(self, input_dict_):    
         self.E =  Event_list_cl(self)  # declare event_list, we store event_obj inside
         
         self.input_dict =dict()
-        self.input_dict =input_dict
+        self.input_dict =copy.deepcopy(input_dict_)
         # ### smart input        
         
         # # self.migration_mode = 'StopNCopy'      # 'PreCopy' or 'StopNCopy'        
@@ -26,7 +26,7 @@ class Global_cl():
         # self.VMmigr_gen_type = input_dict['VMmigr_gen_type']         #'vmFirst' or 'srcFirst'.        
         # #**** vmFirst: largest VM search DST first.     
         # #**** srcFirst:  smallest SRC --> largest VM search DST first
-        self.record_input_dict(input_dict)
+        self.record_input_dict(self.input_dict)
         # ### smart input        
         
         
@@ -61,6 +61,8 @@ class Global_cl():
         self.waiting_VM__set = set()            
             
     # # # update the decision making varible in G
+    # # # just a bridge to connect G local varible and input dict.
+    # # # after input are bridge into G, later coding style should let G to direct access input[].
     def record_input_dict(self, input_dict):
         self.VMmigr_gen_type = input_dict['VMmigr_gen_type']         #'vmFirst' or 'srcFirst'.        
 
@@ -76,15 +78,16 @@ class Global_cl():
 
 
         
-    def refresh_G(self, input_dict, all_host__dict, all_VM__dict):
-        self.record_input_dict(input_dict)
-        self.input_dict =input_dict
+    def refresh_G(self, input_dict_, all_host__dict, all_VM__dict):
+        self.input_dict =copy.deepcopy(input_dict_)
+        self.record_input_dict(self.input_dict)
+
     
-        self.all_host__dict = all_host__dict    # store all the host_obj   e.g.  all_host__dict[host_num] = host_obj
-        self.all_VM__dict = all_VM__dict
-        for key, obj in all_host__dict.items():
+        self.all_host__dict = copy.deepcopy(all_host__dict)    # store all the host_obj   e.g.  all_host__dict[host_num] = host_obj
+        self.all_VM__dict = copy.deepcopy(all_VM__dict)
+        for key, obj in self.all_host__dict.items():
             obj.G = self
-        for key, obj in all_VM__dict.items():
+        for key, obj in self.all_VM__dict.items():
             obj.G = self
             
             
@@ -152,8 +155,8 @@ class Host_cl():
         self.host_num = host_num        
         self.upRBW = 0.0   # now residual up BW
         self.dnRBW = 0.0   # now residual down BW
-        self.Initial_upRBW = 0.0   # maybe...useless...Initial residual up BW after all VMM complete  
-        self.Initial_dnRBW = 0.0   # maybe...useless...Initial residual down BW after all VMM complete
+        self.Initial_upRBW = 0.0   # For get_set_num use:   residual up BW exclusive of the migration data rate. 
+        self.Initial_dnRBW = 0.0   # 
         self.Final_upRBW = 0.0   # Final residual up BW after all VMM complete
         self.Final_dnRBW = 0.0   # Final residual down BW after all VMM complete
         
@@ -235,7 +238,7 @@ class VM_cl2():
         self.DSTnum = None  #the host DST number
         self.status = "waiting"     # status ==> 'waiting', 'sending', 'completed'
         # self.dominant = "Null"   # dominant host = 'SRC' or 'DST'    ###useless
-        self.set_type = 'Null'   # 1 or 2 or 3  ==> use number not string!!!!!
+        # self.set_type = 'Null'   # 1 or 2 or 3  ==> use number not string!!!!!
         self.set_num = None  # value = 1,2,3
         
         self.migration_start_time = 0
@@ -262,7 +265,7 @@ class VM_cl2():
         SRChost = self.G.all_host__dict[self.SRCnum]
         DSThost = self.G.all_host__dict[self.DSTnum]
         
-        SRC_now = SRChost.Initial_upRBW
+        SRC_now = copy.copy(SRChost.Initial_upRBW)
         if self.G.migration_mode == 'StopNCopy':
             SRC_now += self.upSBW
         else:
@@ -294,6 +297,7 @@ class VM_cl2():
         # update  vm_obj.remain_size according latest_data_rate 
         last_round_migration_period = self.G.now - self.last_migration_event_schedule_time
         self.remain_size -= float(last_round_migration_period) * self.latest_data_rate
+
     
         assert(self.status == 'sending')
         SRCobj = self.G.all_host__dict[self.SRCnum]
@@ -364,7 +368,8 @@ class VM_cl2():
         tmp_type = 'vm_finish'
         event_obj = Event_cl(self.G, tmp_type, finish_time, self.vm_num, tmp_info__dict)
         
-        assert (self.migration_start_time != 0)        
+        # assert (self.migration_start_time != 0)        
+        assert (self.migration_start_time <= self.G.now)        
         self.G.E.insert_event_obj(event_obj)
 
         # # # make sure src and dst RBW are reasonable
@@ -403,8 +408,7 @@ class VM_cl2():
                     vm_obj.adjust_VM_BW(new_rate)
                     ongoing_SRC_VM_rate_adjust = True
                     SRCobj = self.G.all_host__dict[vm_obj.SRCnum]
-
-                    
+                    vm_raised = i
                     break
             assert(ongoing_SRC_VM_rate_adjust == True)
         # # # VM activation at DST:  vm service BW will decrease DST upRBW and dnRBW
@@ -431,17 +435,20 @@ class VM_cl2():
         self.next_status()
 
         self.migration_over_time = self.G.now
-        
-        
+
         # # #  adjust ongoing VM rate at SRC
         if ongoing_SRC_VM_rate_adjust == True:
-            for vm_num in SRCobj.sending_vm__set:
-                vm_obj = G.all_VM__dict[vm_num]
+            # SRCobj_tmp = G.all_host__dict[G.all_VM__dict[vm_raised].SRCnum].sending_vm__set
+            for vm_num in self.G.all_host__dict[self.G.all_VM__dict[vm_raised].SRCnum].sending_vm__set:
+                vm_obj = self.G.all_VM__dict[vm_num]
                 old_rate = vm_obj.latest_data_rate
                 result, dataRate = vm_obj.speed_checking('partial',None)
+                if result == 'success' and dataRate > vm_obj.latest_data_rate:
+                    vm_obj.adjust_VM_BW(dataRate)
+                
                 
         
-        
+
         # # # make sure src and dst RBW are reasonable
         self.assert_host_RBW()
 
@@ -450,17 +457,25 @@ class VM_cl2():
         # print 'basic.py  vm_obj.migration_over() vm_num=', self.vm_num
         if self.status != 'sending':
             print 'basic.py  vm_obj.migration_over() skip vm_num=', self.vm_num
+            # # # identical event are scheduled into event_list. No program logic error, don't worry !!!
+            # # #  this assert should disable, because identical event with the same event time in event_list  may be recorded.
+            # # # it is inevitable
+            # assert(0), self.status            
+            if self.status == 'waiting':
+                assert(0)
             return
         else:
             print 'basic.py  vm_obj.migration_over() vm_num=', self.vm_num
         if self.G.algo_version != 'ConCurrent':
+            # # # ConCurrent algo maintain the resource by themself
             self.release_BW()
         
         if self.G.algo_version == 'StrictSequence':
             func_SS_update_ongoing(self.G,self.vm_num)
             ### can change to multiple SS G functions
-            func_SS(self.G, 1, 'random', self.vm_num)
-            func_SS(self.G, 2, 'random', self.vm_num)
+            func_SS_modified(self.G)
+            # func_SS(self.G, 1, 'descending', self.vm_num)
+            # func_SS(self.G, 2, 'descending', self.vm_num)
         elif self.G.algo_version == 'ConCurrent':
             func_Concurrent_Ongoing(self.G,self.vm_num)
         elif self.G.algo_version == 'RanSequence':
@@ -518,7 +533,12 @@ class VM_cl2():
         
     def compute_finish_time(self):
         time = self.remain_size / float(self.latest_data_rate)
-        finish_time = int(math.ceil(time / SLOTTIME))
+        # assert (self.latest_data_rate > 0), self.latest_data_rate
+        # assert (self.remain_size >0), '%.50f' % (self.remain_size)
+        # assert(time > 0), time
+        finish_time = int(math.floor(time / SLOTTIME))
+        # finish_time = time / SLOTTIME
+        assert (finish_time >=0), finish_time
         finish_time *= SLOTTIME
         finish_time += self.G.now 
         return finish_time
@@ -544,12 +564,14 @@ class VM_cl2():
         DSTobj = self.G.all_host__dict[self.DSTnum]
         upRate = copy.copy(SRCobj.upRBW)
         dnRate = copy.copy(DSTobj.dnRBW)
+        print 'basic.py speed_checking()_1:  upRate, dnRate', upRate, dnRate
         
         if self.status == 'sending':
             upRate += self.latest_data_rate
             dnRate += self.latest_data_rate
         elif self.G.migration_mode == 'StopNCopy' and self.status == 'waiting':
-            upRate += self.upSBW   # StopNCopy mode!!!                   
+            upRate += self.upSBW   # StopNCopy mode!!!
+        print 'basic.py speed_checking()_2:  upRate, dnRate', upRate, dnRate
 
         minRate = min(upRate, dnRate)
         if minRate == upRate:
@@ -557,7 +579,8 @@ class VM_cl2():
             # print 'basic.py:  vm_obj.speed_checking() minRate from SRC.upRate'
         elif minRate == dnRate:
             None
-            # print 'basic.py:  vm_obj.speed_checking() minRate from DST.dnRate'            
+            # print 'basic.py:  vm_obj.speed_checking() minRate from DST.dnRate'
+
         Rate_tmp = minRate / float(RATE_PRECISION)        
         Rate_tmp = int(Rate_tmp) * RATE_PRECISION
         minRate = Rate_tmp
@@ -574,10 +597,18 @@ class VM_cl2():
             elif BW_mode == 'full':
                 if domi_node =='DST':
                     None
-                    # assert (minRate == dnRate)
+                    # assert (abs(minRate - dnRate) <= RATE_PRECISION), (minRate, dnRate)
+                    if self.G.input_dict['SS_level']  == 'full' and len(DSTobj.sending_vm__set) != 0:
+                        mode_result = 'fail'
+                        # assert(0)
+                        
                 elif domi_node =='SRC':
                     None
-                    # assert (minRate == upRate)
+                    # assert (abs(minRate - upRate) <= RATE_PRECISION), (minRate, upRate)
+                    if self.G.input_dict['SS_level']  == 'full' and len(SRCobj.sending_vm__set) != 0:
+                        mode_result = 'fail'
+                        # assert(0)
+                    
                 else:
                     assert(0)
             else:
@@ -592,6 +623,7 @@ class VM_cl2():
     def assert_host_RBW(self):
         SRCobj = self.G.all_host__dict[self.SRCnum]
         DSTobj = self.G.all_host__dict[self.DSTnum]
+        print 'basic.py assert_host_RBW() vm_num=', self.vm_num
         
         assert(SRCobj.upRBW >= - RATE_PRECISION  and SRCobj.upRBW <= SRCobj.BWC + RATE_PRECISION), '%.20f, %.20f' % (SRCobj.upRBW, SRCobj.BWC)
         assert(DSTobj.upRBW >= - RATE_PRECISION  and DSTobj.upRBW <= DSTobj.BWC + RATE_PRECISION), '%.20f, %.20f' % (DSTobj.upRBW, DSTobj.BWC)
@@ -622,7 +654,7 @@ class VM_cl2():
     # # # Super migration ==> instantly migrate VM from SRC to DST without any cost. this function deal with SRC/DST/upRBW/dnRBW varible.
     # # # for confirmation in snapshot_gen.py to make sure the VM migration will never violate the capacity constrain at SRCs and DSTs
     def VM_god_migration(self, all_host__dict = None):
-    
+        assert(all_host__dict != None) 
         if all_host__dict == None:
             all_host__dict = self.G.all_host__dict
         
@@ -667,18 +699,21 @@ class VM_cl2():
         
 class Event_cl():
     def __init__(self, G, type, time, vm_num, info__dict = dict()):
+        assert(time > 0)
         self.G = G
         self.type = type
         self.time = time        #event finish time
         self.event_schedule_time = G.now        #time: schedule the event
         self.vm_num = vm_num
-        self.info__dict = info__dict
+        self.info__dict = copy.deepcopy(info__dict)
         self.event_num = 0
         
         self.write_time_to_vm_obj()
         
     def write_time_to_vm_obj(self):
         vm_obj = self.G.all_VM__dict[self.vm_num]
+        assert(self.time >= self.G.now)
+        assert(vm_obj.last_migration_event_schedule_time <= self.G.now)
         vm_obj.last_migration_event_finish_time = self.time
         vm_obj.last_migration_event_schedule_time = self.G.now
         if vm_obj.migration_start_time == 0:

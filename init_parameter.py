@@ -52,8 +52,10 @@ ALL_SETTING_LIST = [
     'src_num',
     'migr_type',    
     'VMmigr_gen_type',    
+    'vm_sel_mode',
     'migration_mode',
     'algo_version',
+    'SS_level',
 ]
 
 ALL_RESULT_LIST = [

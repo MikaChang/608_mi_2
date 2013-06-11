@@ -71,36 +71,3 @@ def func_SS(G, GPNum, sort_mode, vm_num):
                 G.all_host__dict[regHost_num].reg_q__Set.add(vm_obj.vm_num)
                 break
                 
-
-                
-def func_SS_modified(G):
-    print 'func_SS'
-    # for vm_obj in G.all_host__dict[0].GPNum_to_VM__dict[2]:
-        # print "???",vm_obj.vm_num
-    for DST_host_num in G.DST_host__set:
-        DST_host = G.all_host__dict[DST_host_num]
-        seq_vm_obj__list = sorted(DST_host.GPNum_to_VM__dict[1], key=lambda VM_cl2: VM_cl2.dnBSratio)
-
-        for vm_obj in seq_vm_obj__list:
-            result, miniRate = vm_obj.speed_checking(BW_mode = 'full', domi_node = 'DST' )
-            if result == 'success':
-                # print '1#######',vm_obj.vm_num
-                vm_obj.assign_VM_BW(miniRate)
-                break
-            else:
-                break
-                
-    # for vm_obj in SRC_host.GPNum_to_VM__dict[2]:
-        # print "@@@",vm_obj.vm_num
-    for SRC_host_num in G.SRC_host__set:
-        SRC_host = G.all_host__dict[SRC_host_num]
-        seq_vm_obj__list = sorted(SRC_host.GPNum_to_VM__dict[2], key=lambda VM_cl2: VM_cl2.upSBratio)
-        
-        for vm_obj in seq_vm_obj__list:
-            result, miniRate = vm_obj.speed_checking(BW_mode = 'full', domi_node = 'SRC' )
-            if result == 'success':
-            # print '2#######',vm_obj.vm_num
-                vm_obj.assign_VM_BW(miniRate)
-                break
-            else:
-                break

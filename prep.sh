@@ -1,0 +1,3 @@
+mkdir aggr_result
+mkdir result_archive
+mkdir snapshot_archive

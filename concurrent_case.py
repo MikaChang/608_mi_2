@@ -50,17 +50,30 @@ def func_Concurrent_Init(G):
         if status==1:
             vm_obj = G.all_VM__dict[vm_num]
             assert(vm_obj.status == 'waiting')
+
             
+        ### mika modify
     for vm_num,status in bool__dict.items():
         if status == 1:
             vm_obj = G.all_VM__dict[vm_num]
-            vm_obj.assign_VM_BW(vm_obj.tmp_rate)
+            # vm_obj.assign_VM_BW(vm_obj.tmp_rate)
+            vm_obj.assign_VM_BW(RATE_PRECISION)
             #assert(vm_obj.tmp_rate > 0), vm_obj.tmp_rate
             #vm_obj.concurrent_adjust_VM_BW(vm_obj.tmp_rate)
             #if self.migration_start_time == 0:
             ##    self.migration_start_time = self.G.now
             ##self.last_migration_event_time = self.G.now
             ##self.G.E.list.insert(event_obj)
+    for vm_num,status in bool__dict.items():
+        if status == 1:
+            vm_obj = G.all_VM__dict[vm_num]
+            # vm_obj.assign_VM_BW(vm_obj.tmp_rate)
+            vm_obj.concurrent_resetVM_BW()
+            vm_obj.concurrent_adjust_VM_BW(vm_obj.tmp_rate)
+
+            
+            
+            
             
 def func_Concurrent_Ongoing(G,finish_vm):
     totalVM = 0
